@@ -28,12 +28,13 @@ class Evolution(Model):
         self,
         height=HEIGHT,
         width=WIDTH,
-        N_creatures=CREATURES,
-        N_candies=CANDIES,
+        n_creatures=CREATURES,
+        n_candies=CANDIES,
         max_days=MAX_DAYS,
         energy=ENERGY,
         speed=1,
     ):
+        super().__init__()
 
         # Set up model objects
         compete_stages = ["stage_1_compete"] * 100
@@ -48,8 +49,8 @@ class Evolution(Model):
             x_max=width, y_max=height, torus=True, x_min=0, y_min=0)
 
         self.current_id = 0
-        self.N_creatures = N_creatures
-        self.N_candies = N_candies
+        self.n_creatures = n_creatures
+        self.n_candies = n_candies
         self.max_days = max_days
         self.height = height
         self.width = width
@@ -59,7 +60,7 @@ class Evolution(Model):
         self.day = 0
 
         # Place creatures
-        for i in range(self.N_creatures):
+        for _ in range(self.n_creatures):
             x_cord = random.uniform(a=0, b=self.width)
             y_cord = random.uniform(a=0, b=self.height)
             pos = (x_cord, y_cord)
@@ -73,7 +74,7 @@ class Evolution(Model):
             self.schedule.add(new_creature)
 
         # Place candies
-        for i in range(self.N_candies):
+        for _ in range(self.n_candies):
             x_cord = random.uniform(a=0, b=self.width)
             y_cord = random.uniform(a=0, b=self.height)
             pos = (x_cord, y_cord)
@@ -92,11 +93,12 @@ class Evolution(Model):
             })
 
     def evolve(self):
-        agents = self.schedule.agents
-        creatures = [agent for agent in agents if isinstance(agent, Creature)]
-        energy = self.total_energy
-        for creature in creatures:
-            print(creature.unique_id, creature.energy)
+        """Evolves the agents at the end of the day."""
+        # agents = self.schedule.agents
+        # creatures = [agent for agent in agents if isinstance(agent, Creature)]
+        # energy = self.total_energy
+        # for creature in creatures:
+        #     print(creature.unique_id, creature.energy)
 
     def step(self):
         self.day += 1

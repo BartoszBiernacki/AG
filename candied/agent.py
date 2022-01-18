@@ -150,14 +150,13 @@ class Creature(Agent):
                 self.eaten_candies += 1
 
     def stage_1_compete(self):
+        """Only run around and eat, do not evolve."""
         self.step()
 
     def stage_2_evolve(self):
-        """Evolution operator.
-
-        A composition of crossover and mutation operators.
-        """
+        """Compete AND evolve."""
         # TODO: implement this
+        self.step()
         print('EVOLUTION NOT IMPLEMENTED')
 
     def step(self):

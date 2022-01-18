@@ -12,14 +12,10 @@ class SimpleCanvas(VisualizationElement):
     """Continuous canvas."""
     HEIGHT = 500
     WIDTH = 500
-    local_includes = [
-        "simple_continuous_canvas.js",
-        "candied/simple_continuous_canvas.js",
-    ]
+    local_includes = ["candied/simple_continuous_canvas.js"]
 
-    def __init__(self, portrayal_method):
+    def __init__(self):
         super().__init__()
-        self.portrayal_method = portrayal_method
         new_element = f"new Continuous_Module({self.WIDTH}, {self.HEIGHT})"
         self.js_code = "elements.push(" + new_element + ");"
 
@@ -37,36 +33,36 @@ class SimpleCanvas(VisualizationElement):
             space_state.append(portrayal)
         return space_state
 
+    @staticmethod
+    def portrayal_method(agent):
+        """Defines how agents are portrayed in the visualization."""
+        portrayal = {"Shape": "circle"}
+        if isinstance(agent, Creature):
+            r = agent.view_range
+            portrayal["r"] = r * SimpleCanvas.HEIGHT / Evolution.HEIGHT
+            eaten_candies = agent.eaten_candies
+            if eaten_candies == 0:
+                portrayal["Color"] = "Red"
+                portrayal['Layer'] = 2
+            elif eaten_candies == 1:
+                portrayal["Color"] = "Yellow"
+                portrayal['Layer'] = 1
+            elif eaten_candies == 2:
+                portrayal["Color"] = "Green"
+                portrayal['Layer'] = 0
 
-def agent_portrayal(agent):
-    """Defines how agents are portrayed in the visualization."""
-    portrayal = {"Shape": "circle"}
-    if isinstance(agent, Creature):
-        portrayal[
-            "r"] = agent.view_range * SimpleCanvas.HEIGHT / Evolution.HEIGHT
-        eaten_candies = agent.eaten_candies
-        if eaten_candies == 0:
-            portrayal["Color"] = "Red"
-            portrayal['Layer'] = 2
-        elif eaten_candies == 1:
-            portrayal["Color"] = "Yellow"
-            portrayal['Layer'] = 1
-        elif eaten_candies == 2:
-            portrayal["Color"] = "Green"
-            portrayal['Layer'] = 0
+        if isinstance(agent, Candy):
+            portrayal['Layer'] = 10
+            portrayal['Color'] = "Blue"
+            portrayal['Filled'] = "True"
+            portrayal['r'] = 2
+            if agent.eaten:
+                portrayal['r'] = 0
 
-    if isinstance(agent, Candy):
-        portrayal['Layer'] = 10
-        portrayal['Color'] = "Blue"
-        portrayal['Filled'] = "True"
-        portrayal['r'] = 2
-        if agent.eaten:
-            portrayal['r'] = 0
-
-    return portrayal
+        return portrayal
 
 
-canvas_element = SimpleCanvas(portrayal_method=agent_portrayal)
+canvas_element = SimpleCanvas()
 
 creatures_slider = UserSettableParameter(
     'slider',
@@ -103,8 +99,8 @@ eaters_graph = ChartModule(
 display_params = {
     "height": Evolution.HEIGHT,
     "width": Evolution.WIDTH,
-    "N_creatures": creatures_slider,
-    "N_candies": candies_slider,
+    "n_creatures": creatures_slider,
+    "n_candies": candies_slider,
     "max_days": 3000,
 }
 
@@ -114,6 +110,3 @@ server = ModularServer(
     name="Evolution model",
     model_params=display_params,
 )
-
-if __name__ == '__main__':
-    server.launch()
