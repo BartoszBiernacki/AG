@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "agents"
+name = "candied"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Candy-eating genetic algorithm agent model."
+authors = ["Bartosz Biernacki", "Piotr Machura"]
 license = "MIT"
 
 [tool.poetry.dependencies]
@@ -15,6 +15,9 @@ Mesa = "~=0.8.9"
 [tool.mypy]
 python_version = "3.8"
 ignore_missing_imports = true
+
+[tool.poetry.scripts]
+serve = "candied.server:server.launch()"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
