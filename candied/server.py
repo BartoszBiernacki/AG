@@ -7,18 +7,20 @@ from mesa.visualization.UserParam import UserSettableParameter
 from .agent import Candy, Creature
 from .model import Evolution
 
-CANVAS_H = 500
-CANVAS_W = 500
-
 
 class SimpleCanvas(VisualizationElement):
     """Continuous canvas."""
-    local_includes = ["simple_continuous_canvas.js"]
+    HEIGHT = 500
+    WIDTH = 500
+    local_includes = [
+        "simple_continuous_canvas.js",
+        "candied/simple_continuous_canvas.js",
+    ]
 
     def __init__(self, portrayal_method):
         super().__init__()
         self.portrayal_method = portrayal_method
-        new_element = f"new Simple_Continuous_Module({CANVAS_W}, {CANVAS_H})"
+        new_element = f"new Continuous_Module({self.WIDTH}, {self.HEIGHT})"
         self.js_code = "elements.push(" + new_element + ");"
 
     def render(self, model):
@@ -40,7 +42,8 @@ def agent_portrayal(agent):
     """Defines how agents are portrayed in the visualization."""
     portrayal = {"Shape": "circle"}
     if isinstance(agent, Creature):
-        portrayal["r"] = agent.view_range * CANVAS_H / Evolution.HEIGHT
+        portrayal[
+            "r"] = agent.view_range * SimpleCanvas.HEIGHT / Evolution.HEIGHT
         eaten_candies = agent.eaten_candies
         if eaten_candies == 0:
             portrayal["Color"] = "Red"

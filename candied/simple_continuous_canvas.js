@@ -56,7 +56,7 @@ var ContinuousVisualization = function(height, width, context) {
 	};
 };
 
-var Simple_Continuous_Module = function(canvas_width, canvas_height) {
+var Continuous_Module = function(canvas_width, canvas_height) {
 	// Create the element
 	// ------------------
 
