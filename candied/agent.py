@@ -68,7 +68,7 @@ class Creature(Agent):
             2) focus, proportional to the tan(focus angle)
             3) vision energy, proportional to sqrt(vision_range)
         """
-        # self.energy -= self.speed**2
+        self.energy -= self.speed**2
 
     def move(self, food):
         """Moves `self.speed` units ahead.
@@ -77,8 +77,6 @@ class Creature(Agent):
         taking a step in the direction of a cone centered at the candy and with
         spread angle equal to `self.focus_angle`.
         """
-        print(self.speed)
-        print(self.energy)
         r = self.speed
         if food:
             slope = (food.pos[1] - self.pos[1]) / (food.pos[0] - self.pos[0])
@@ -111,7 +109,7 @@ class Creature(Agent):
                 new_pos = new_pos_2
 
         else:
-            theta = self.moving_angle + random.uniform(0, np.pi)
+            theta = self.moving_angle + random.uniform(-0.5 * np.pi , 0.5 * np.pi)
             dx = r * np.cos(theta)
             dy = r * np.sin(theta)
             new_pos = (self.pos[0] + dx, self.pos[1] + dy)

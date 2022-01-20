@@ -24,7 +24,7 @@ class Evolution(Model):
     MAX_DAYS = 30
     ENERGY = 500
     MUT_RATE = 0.25
-    MAX_SPEED = 1
+    MAX_SPEED = 10
     VIEW_RANGE = 5
 
     def __init__(
@@ -182,7 +182,8 @@ class Evolution(Model):
         # Halt if all days passed
         if self.day < self.days:
             self.schedule.step()
-            self.evolve()
+            # TODO: evolution
+            # self.evolve()
         else:
             self.running = False
 
