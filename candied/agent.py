@@ -9,78 +9,58 @@ import numpy as np
 from mesa import Agent
 
 
-def random_angle(moving_angle, view_angle):
-    if not moving_angle:
-        moving_angle = 0
-
-    if view_angle > 2 * np.pi:
-        view_angle = 2 * np.pi
-
-    left = moving_angle - view_angle / 2
-    right = moving_angle + view_angle / 2
-
-    theta = random.uniform(a=left, b=right)
-    if theta < 0:
-        theta = 2 * np.pi - theta
-
-    if theta > 2 * np.pi:
-        theta = theta % (2 * np.pi)
-
-    return theta
-
-
 class Creature(Agent):
     """Creature is an agent that searches for candies, as it needs at least one
     to survive and two to procreate.
 
-    The creature's chromosome consists of just 3 genes - speed, view range and focus.
+    The creature's chromosome consists of just 3 genes - speed, view range and
+    focus. If kwargs of the constructor are `None` the genes are chosen
+    randomly from `(0, max_value)`, where `max_value` is defined in the parent
+    model.
     """
 
-    def __init__(self, unique_id, pos, model):
+    def __init__(
+        self,
+        unique_id,
+        pos,
+        model,
+        speed=None,
+        focus_angle=None,
+        view_range=None,
+        mut_rate=None,
+    ):
         super().__init__(unique_id=unique_id, model=model)
-        self.energy = model.energy
-        self.speed = model.speed
         self.pos = pos
-
-        self.view_angle = 2 * np.pi
-        self.view_range = 5
+        self.energy = model.max_energy
+        self.moving_angle = random.uniform(0, 2 * np.pi)
         self.eaten_candies = 0
-        self.moving_angle = None
 
-    def search_for_food(self):
-        """Locates the nearest candy and tries to move towards it.
+        # Genes
+        self.speed = speed or random.uniform(0, model.max_speed)
+        self.mut_rate = mut_rate or random.uniform(0, model.max_mut_rate)
+        self.focus_angle = focus_angle or random.uniform(0, np.pi)
+        self.view_range = view_range or random.uniform(0, model.max_view_range)
 
-        TODO: describe this better.
-        """
+    def find_candy(self):
+        """Locates and returns the nearest candy, `None` if there isn't one."""
         neighbours = self.model.space.get_neighbors(
             pos=self.pos,
             radius=self.view_range,
             include_center=True,
         )
-
         candies = [
             neighbour for neighbour in neighbours
-            if isinstance(neighbour, Candy)
+            if isinstance(neighbour, Candy) and not neighbour.eaten
         ]
-        min_distance = 1e9
-        nearest_candy = None
-        for candy in candies:
-            if not candy.eaten:
-                distance = self.model.space.get_distance(
-                    pos_1=self.pos, pos_2=candy.pos)
 
-                if distance < min_distance:
-                    nearest_candy = candy
-                    min_distance = distance
-
-        if min_distance > self.view_range:
-            nearest_candy = False
-        # if nearest_candy:
-        #     print("Food found at ", nearest_candy.pos,
-        #           "dist=", distance)
+        nearest_candy = min(
+            candies,
+            key=lambda c: self.model.space.get_distance(self.pos, c.pos),
+            default=None,
+        )
         return nearest_candy
 
-    def decrease_energy(self):
+    def expend_energy(self):
         """Expend energy according to the genes.
 
         Energy spend is a sum of:
@@ -88,21 +68,24 @@ class Creature(Agent):
             2) focus, proportional to the tan(focus angle)
             3) vision energy, proportional to sqrt(vision_range)
         """
-        self.energy -= self.speed**2
+        # self.energy -= self.speed**2
 
     def move(self, food):
+        """Moves `self.speed` units ahead.
 
+        If `food` is not `None` the creature will try to move closer to it, by
+        taking a step in the direction of a cone centered at the candy and with
+        spread angle equal to `self.focus_angle`.
+        """
+        print(self.speed)
+        print(self.energy)
         r = self.speed
         if food:
-            x_creature = self.pos[0]
-            y_creature = self.pos[1]
-            x_food = food.pos[0]
-            y_food = food.pos[1]
-
-            slope = (y_food - y_creature) / (x_food - x_creature)
+            slope = (food.pos[1] - self.pos[1]) / (food.pos[0] - self.pos[0])
             theta = math.atan(slope)
 
             # decide in which direction among line creature should go
+            # TODO: there surely is a better way of doing this?
             theta_1 = theta
             dx = r * np.cos(theta_1)
             dy = r * np.sin(theta_1)
@@ -128,20 +111,20 @@ class Creature(Agent):
                 new_pos = new_pos_2
 
         else:
-            theta = random_angle(
-                moving_angle=self.moving_angle, view_angle=self.view_angle)
+            theta = self.moving_angle + random.uniform(0, np.pi)
             dx = r * np.cos(theta)
             dy = r * np.sin(theta)
-
-            new_x = self.pos[0] + dx
-            new_y = self.pos[1] + dy
-            new_pos = (new_x, new_y)
+            new_pos = (self.pos[0] + dx, self.pos[1] + dy)
 
         self.pos = new_pos
         self.model.space.move_agent(agent=self, pos=self.pos)
         self.moving_angle = theta
 
     def eat_candy(self, food):
+        """Consume the `food` if it's not `None`.
+
+        A no-op otherwise.
+        """
         if food:
             distance = self.model.space.get_distance(
                 pos_1=self.pos, pos_2=food.pos)
@@ -169,10 +152,12 @@ class Creature(Agent):
         Steps are repeated over the course of a day.
         """
         if self.energy > 0 and self.eaten_candies < 2:
-            food = self.search_for_food()
-            self.decrease_energy()
+            food = self.find_candy()
+            if food:
+                print(food.pos)
+            self.expend_energy()
             self.move(food)
-            self.eat_candy(food=food)
+            self.eat_candy(food)
 
 
 class Candy(Agent):

@@ -16,6 +16,14 @@ Mesa = "~=0.8.9"
 python_version = "3.8"
 ignore_missing_imports = true
 
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+  "invalid-name",
+  "too-many-arguments",
+  "too-many-instance-attributes",
+  "too-many-locals",
+]
+
 [tool.poetry.scripts]
 serve = "candied.server:server.launch()"
 
