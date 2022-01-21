@@ -87,8 +87,8 @@ class Creature(Agent):
 
         # calculate each energy cost
         KE = self.speed**2
-        FE = 0
-        VE = 0
+        FE = 1 / np.tan(self.focus_angle)
+        VE = 5 * self.view_range
 
         dE = KE + FE + VE
         # decrease energy of the creature if apply=True
