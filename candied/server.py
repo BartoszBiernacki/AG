@@ -45,11 +45,12 @@ class SimpleCanvas(VisualizationElement):
                 portrayal["Color"] = "Red"
                 portrayal['Layer'] = 2
             elif eaten_candies == 1:
-                portrayal["Color"] = "Yellow"
+                portrayal["Color"] = "Orange"
                 portrayal['Layer'] = 1
             elif eaten_candies == 2:
                 portrayal["Color"] = "Green"
                 portrayal['Layer'] = 0
+                portrayal["Filled"] = "true"
 
         if isinstance(agent, Candy):
             portrayal['Layer'] = 10
@@ -67,18 +68,18 @@ canvas_element = SimpleCanvas()
 creatures_slider = UserSettableParameter(
     'slider',
     "Creatures",
-    value=5,
+    value=20,
     min_value=1,
-    max_value=20,
+    max_value=100,
     step=1,
 )
 
 candies_slider = UserSettableParameter(
     'slider',
     "Candies",
-    value=20,
+    value=100,
     min_value=0,
-    max_value=100,
+    max_value=1000,
     step=1,
 )
 

@@ -15,7 +15,21 @@ from .agent import Candy, Creature
 class Evolution(Model):
     """Evolution model class.
 
-    TODO: describe this better.
+    HEIGHT, WIDTH: size of the grid on which agents live.
+    CREATURES, CANDIES: initial number of creatures and candies.
+    MAX_DAYS: number of generations to cover.
+    ENERGY: default energy which agent has at the beginning of each day.
+    MUT_RATE: probability that creature's child will be mutated right
+        after creation.
+    MAX_SPEED: in initial population creature's speed is a random number
+    from uniform distribution from range (0, MAX_SPEED).
+    VIEW_RANGE: in initial population creature's view range is a random
+        number from uniform distribution from range (0, MAX_VIEW_RANGE).
+    MAX_STEPS_PER_DAY: quantized day length. It is the max number of small
+         moves creature can do during day while looking for food. If creature
+         does not find food in these moves, rest of it's energy is lost. This
+         approach penalizes ,,lazy'' creatures: those who move slowly and have
+         a short view range.
     """
     HEIGHT = 200
     WIDTH = 200
@@ -25,7 +39,8 @@ class Evolution(Model):
     ENERGY = 500
     MUT_RATE = 0.25
     MAX_SPEED = 10
-    VIEW_RANGE = 5
+    MAX_VIEW_RANGE = 5
+    MAX_STEPS_PER_DAY = 100
 
     def __init__(
         self,
@@ -37,18 +52,19 @@ class Evolution(Model):
         energy=ENERGY,
         mut_rate=MUT_RATE,
         speed=MAX_SPEED,
-        view_range=VIEW_RANGE,
+        view_range=MAX_VIEW_RANGE,
     ):
         super().__init__()
 
         # Set up model objects
+        preparation_stage = ['stage_0_prepare_for_new_day']
         compete_stages = ["stage_1_compete"] * 100
-        model_stages = compete_stages + ["stage_2_test"]
+        model_stages = preparation_stage + compete_stages
         self.schedule = StagedActivation(
             model=self, stage_list=model_stages, shuffle=True)
 
         # to demonstrate what is going on with staged activation
-        self.schedule = RandomActivation(model=self)
+        # self.schedule = RandomActivation(model=self)
 
         self.space = ContinuousSpace(
             x_max=width, y_max=height, torus=True, x_min=0, y_min=0)
@@ -56,7 +72,7 @@ class Evolution(Model):
         self.current_id = 0
         self.n_creatures = n_creatures
         self.n_candies = n_candies
-        self.days = max_days
+        self.last_day = max_days
         self.height = height
         self.width = width
 
@@ -79,21 +95,12 @@ class Evolution(Model):
             )
             self.space.place_agent(agent=new_creature, pos=pos)
             self.schedule.add(new_creature)
-
-        # Place candies
-        for _ in range(self.n_candies):
-            pos = (
-                random.uniform(a=0, b=self.width),
-                random.uniform(a=0, b=self.height),
-            )
-
-            new_candy = Candy(unique_id=self.next_id(), pos=pos, model=self)
-            self.space.place_agent(agent=new_candy, pos=pos)
-            self.schedule.add(new_candy)
-
+        
+        # Allow to run simulations in background by using BatchRunner
         self.running = True
         self.day = 0
 
+        # Collect some model data at the end of each day i.e. unused energy
         self.datacollector = DataCollector(
             model_reporters={
                 "Energy": lambda model: model.total_energy,
@@ -101,39 +108,31 @@ class Evolution(Model):
                 "One eaters": lambda model: model.count_eaters(1),
                 "Two eaters": lambda model: model.count_eaters(2),
             })
-
-    def evolve(self):
-        """Evolves the creatures at the end of the day.
-
-        The creatures are processed as follows:
-            a) if they ate no candies they die;
-            b) if they ate 1 candy they survive, but recieve a 50% energy
-               penalty the next day;
-            c) if they ate 2 candies they become parents and reproduce by
-               pairing randomly to produce offspring as described in
-               `self.crossover()`.
+        
+    def remove_old_candies(self):
         """
-        # Kill the weak
-        for weak in filter(
-                lambda a: isinstance(a, Creature) and a.eaten_candies == 0,
+        Remove all candies at the end of each day.
+        """
+        for candy in filter(
+                lambda a: isinstance(a, Candy),
                 self.schedule.agents,
         ):
-            self.schedule.remove(weak)
-
-        # The strong procreate
-        parents = [
-            a for a in self.schedule.agents
-            if isinstance(a, Creature) and a.eaten_candies == 2
-        ]
-        random.shuffle(parents)
-        for i in range(0, len(parents), 2):
-            self.crossover(parents[i], parents[i + 1])
-
-        # If there is an odd number of parents the last one is skipped - pair
-        # him with a random partner
-        if len(parents) % 2 == 1:
-            self.crossover(parents[-1], random.choice(parents[:-1]))
-
+            self.schedule.remove(candy)
+            
+    def place_new_candies(self):
+        """
+        Place new candies at the beginning of each day.
+        """
+        for _ in range(self.n_candies):
+            pos = (
+                random.uniform(a=0, b=self.width),
+                random.uniform(a=0, b=self.height),
+            )
+        
+            new_candy = Candy(unique_id=self.next_id(), pos=pos, model=self)
+            self.space.place_agent(agent=new_candy, pos=pos)
+            self.schedule.add(new_candy)
+        
     def crossover(self, *parents):
         """Perform a crossover between `parents`.
 
@@ -175,15 +174,70 @@ class Evolution(Model):
             self.space.place_agent(agent=offspring, pos=pos)
             self.schedule.add(offspring)
 
+    def evolve(self):
+        """Evolves the creatures at the end of the day.
+
+        The creatures are processed as follows:
+            a) if they ate no candies they die;
+            b) if they ate 1 candy they survive, but recieve a 50% energy
+               penalty the next day;
+            c) if they ate 2 candies they become parents and reproduce by
+               pairing randomly to produce offspring as described in
+               `self.crossover()`.
+        """
+        # Kill the weak
+        for weak in filter(
+                lambda a: isinstance(a, Creature) and a.eaten_candies == 0,
+                self.schedule.agents,
+        ):
+            self.schedule.remove(weak)
+
+        # The strong procreate
+        parents = [
+            a for a in self.schedule.agents
+            if isinstance(a, Creature) and a.eaten_candies == 2
+        ]
+        random.shuffle(parents)
+        
+        print(f"There are {len(parents)} parents")
+        if len(parents) > 1:
+            # Iterate over every pair of parents.
+            # 2*(len(parents)//2) to avoid paring last parent if there is an
+            # odd number of them.
+            for i in range(0, 2*(len(parents)//2), 2):
+                print(i+1)
+                self.crossover(parents[i], parents[i + 1])
+    
+            # If there is an odd number of parents the last one was skipped
+            # so pair him with a random partner.
+            
+            if len(parents) % 2 == 1:
+                self.crossover(parents[-1], random.choice(parents[:-1]))
+
     def step(self):
+        """
+        Determines what will happened in one full step of simulation.
+        
+        If self.schedule is RandomActivation (good for visualisation one full
+        day) than step is an elementary update of all agents.
+        
+        If self.schedule is StagedActivation (good for visualisation progress
+        of population) than step is an entire day.
+        """
         self.day += 1
+        if isinstance(self.schedule, StagedActivation):
+            self.place_new_candies()
+        elif self.day == 1:
+            self.place_new_candies()
+            
         self.datacollector.collect(self)
 
         # Halt if all days passed
-        if self.day < self.days:
+        if self.day < self.last_day:
             self.schedule.step()
-            # TODO: evolution
-            # self.evolve()
+            if isinstance(self.schedule, StagedActivation):
+                self.evolve()
+                self.remove_old_candies()
         else:
             self.running = False
 

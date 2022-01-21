@@ -127,11 +127,29 @@ class Creature(Agent):
             distance = self.model.space.get_distance(
                 pos_1=self.pos, pos_2=food.pos)
             if distance < self.speed * 2:
+                print(f"Agent {self} ate candy!")
                 food.eaten = True
                 self.eaten_candies += 1
+                
+    def stage_0_prepare_for_new_day(self):
+        self.energy = self.model.max_energy
+        self.eaten_candies = 0
 
     def stage_1_compete(self):
-        """Only run around and eat, do not evolve."""
+        """
+        Single simulation time step.
+        Only run around and eat, do not evolve.
+        
+        Repeat this stage a bunch of time in model scheduler =
+        StagedActivation to achieve full one day of competition among all
+        creatures.
+        
+        Do repetition in StagedActivation with shuffle=True, to obtain
+        simultaneous move of all creatures. If repetition would be done here
+        by: for _ in range(100): self.step
+        than in particular day agents would be moving in order of call, which
+        would be unfair.
+        """
         self.step()
 
     def stage_2_evolve(self):
@@ -150,9 +168,10 @@ class Creature(Agent):
         Steps are repeated over the course of a day.
         """
         if self.energy > 0 and self.eaten_candies < 2:
+            print(f"Creature {self} has {self.energy} energy.")
             food = self.find_candy()
             if food:
-                print(food.pos)
+                print(f"Food found at {food.pos} by creature {self}!")
             self.expend_energy()
             self.move(food)
             self.eat_candy(food)
@@ -170,10 +189,13 @@ class Candy(Agent):
         self.pos = pos
         self.eaten = False
 
+    def stage_0_prepare_for_new_day(self):
+        """No-op, the candy does not act."""
+        
     def stage_1_compete(self):
         """No-op, the candy does not act."""
 
-    def stage_2_test(self):
+    def stage_2_evolve(self):
         """No-op, the candy does not act."""
 
     def step(self):
