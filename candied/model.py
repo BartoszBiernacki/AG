@@ -10,6 +10,7 @@ from mesa.space import ContinuousSpace
 from mesa.time import RandomActivation, StagedActivation
 
 from .agent import Candy, Creature
+from .collectors import *
 
 
 class Evolution(Model):
@@ -110,49 +111,29 @@ class Evolution(Model):
         # Collect some model data at the end of each day
         self.datacollector = DataCollector(
             model_reporters={
-                "Energy":
-                lambda model: model.total_energy,
-                "Speed":
-                lambda model: model.avg_speed,
-                "View":
-                lambda model: model.avg_view_range,
-                "Focus":
-                lambda model: model.avg_focus_angle,
-                "Mut":
-                lambda model: model.avg_mut_rate,
-                "Creatures":
-                lambda model: len(list(model.creatures)),
-                "Candies":
-                lambda model: len(list(model.candies)),
-                "Zero eaters":
-                lambda model: model.count_eaters(0),
-                "One eaters":
-                lambda model: model.count_eaters(1),
-                "Two eaters":
-                lambda model: model.count_eaters(2),
+                "Energy": total_energy,
+                "Speed": avg_speed,
+                "View": avg_view_range,
+                "Focus": avg_focus_angle,
+                "Mut": avg_mut_rate,
+                "Creatures": count_creatures,
+                "Candies": count_candies,
+                "Zero eaters": count_zero_eaters,
+                "One eaters": count_one_eaters,
+                "Two eaters": count_two_eaters,
             },
             agent_reporters={
                 "Agent type": 'agent_type',
                 "Done steps": "done_steps",
                 'Energy used for movement': 'energy_used_for_movement',
-                'Energy spent on observations': 'energy_spent_on_observations',
+                'Energy spent on view range': 'energy_spent_on_view_range',
+                'Energy spent on focus angle': 'energy_spent_on_focus_angle',
                 'Energy lost': 'energy_lost',
                 'Energy of happiness': 'energy_of_happiness',
                 'Moment of first consumption': 'moment_of_first_consumption',
                 'Moment of second consumption': 'moment_of_second_consumption'
             }
-
         )
-
-    @property
-    def creatures(self):
-        """Iterator over creature-agents."""
-        return filter(lambda a: isinstance(a, Creature), self.schedule.agents)
-
-    @property
-    def candies(self):
-        """Iterator over candy-agents."""
-        return filter(lambda a: isinstance(a, Candy), self.schedule.agents)
 
     def random_pos(self):
         """Returns a tuple of ranodmized `(x,y)` coordinates."""
@@ -224,7 +205,7 @@ class Evolution(Model):
                 parents.append(creature)
 
         random.shuffle(parents)
-        print(f"In day {self.day} there are {len(parents)} parents")
+        # print(f"In day {self.day} there are {len(parents)} parents")
 
         if len(parents) == 1:
             # Clone the single parent and mutate the offspring
@@ -287,54 +268,12 @@ class Evolution(Model):
         else:
             self.running = False
 
-    # DATA COLLECTION
-    # ---------------
     @property
-    def total_energy(self):
-        """Returns total energy of the population."""
-        return sum(map(lambda a: a.energy, self.creatures))
+    def creatures(self):
+        """Iterator over creature-agents."""
+        return filter(lambda a: isinstance(a, Creature), self.schedule.agents)
 
     @property
-    def avg_speed(self):
-        """Returns the average speed of the current population."""
-        creatures = list(self.creatures)
-        if len(creatures) > 0:
-            return sum(map(lambda a: a.speed, creatures)) / len(creatures)
-        else:
-            return 0
-
-    @property
-    def avg_view_range(self):
-        """Returns the average view range of the current population."""
-        creatures = list(self.creatures)
-        if len(creatures) > 0:
-            return sum(map(lambda a: a.view_range, creatures), ) / len(creatures)
-        else:
-            return 0
-
-    @property
-    def avg_focus_angle(self):
-        """Returns the average focus angle of the current population."""
-        creatures = list(self.creatures)
-        if len(creatures) > 0:
-            return sum(map(lambda a: a.focus_angle, creatures), ) / len(creatures)
-        else:
-            return 0
-
-    @property
-    def avg_mut_rate(self):
-        """Returns the average mutation rate of the current population."""
-        creatures = list(self.creatures)
-        if len(creatures) > 0:
-            return sum(map(lambda a: a.mut_rate, creatures), ) / len(creatures)
-        else:
-            return 0
-
-    def count_eaters(self, i):
-        """Returns the number of creatures which have eaten `i` candies."""
-        return len(
-            [
-                a for a in self.schedule.agents
-                if isinstance(a, Creature) and a.eaten_candies == i
-            ],
-        )
+    def candies(self):
+        """Iterator over candy-agents."""
+        return filter(lambda a: isinstance(a, Candy), self.schedule.agents)

@@ -187,7 +187,8 @@ class Creature(Agent):
 
         self.done_steps = 0
         self.energy_used_for_movement = 0
-        self.energy_spent_on_observations = 0
+        self.energy_spent_on_view_range = 0
+        self.energy_spent_on_focus_angle = 0
         self.energy_lost = 0
         self.energy_of_happiness = 0
         self.moment_of_first_consumption = None
@@ -255,7 +256,8 @@ class Candy(Agent):
         self.agent_type = 'Candy'
         self.done_steps = None
         self.energy_used_for_movement = None
-        self.energy_spent_on_observations = None
+        self.energy_spent_on_view_range = None
+        self.energy_spent_on_focus_angle = None
         self.energy_lost = None
         self.energy_of_happiness = None
         self.moment_of_first_consumption = None
