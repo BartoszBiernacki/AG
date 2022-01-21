@@ -36,21 +36,21 @@ class SimpleCanvas(VisualizationElement):
     @staticmethod
     def portrayal_method(agent):
         """Defines how agents are portrayed in the visualization."""
-        portrayal = {"Shape": "circle"}
+        portrayal = {'Shape': 'circle'}
         if isinstance(agent, Creature):
             r = agent.view_range
-            portrayal["r"] = r * SimpleCanvas.HEIGHT / Evolution.HEIGHT
+            portrayal['r'] = r * SimpleCanvas.HEIGHT / Evolution.HEIGHT
             eaten_candies = agent.eaten_candies
             if eaten_candies == 0:
-                portrayal["Color"] = "Red"
+                portrayal['Color'] = 'Red'
                 portrayal['Layer'] = 2
             elif eaten_candies == 1:
-                portrayal["Color"] = "Orange"
+                portrayal['Color'] = 'Orange'
                 portrayal['Layer'] = 1
             elif eaten_candies == 2:
-                portrayal["Color"] = "Green"
+                portrayal['Color'] = 'Green'
                 portrayal['Layer'] = 0
-                portrayal["Filled"] = "true"
+                portrayal['Filled'] = 'true'
 
         if isinstance(agent, Candy):
             portrayal['Layer'] = 10

@@ -15,7 +15,7 @@ def run_in_background():
         "height": 200,
         "width": 200,
         "n_creatures": 10,
-        "max_days": 50,
+        "max_days": 30,
         "energy": 500,
         "mut_rate": 3,
         "speed": 10,
