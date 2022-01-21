@@ -40,7 +40,17 @@ class Creature(Agent):
         self.mut_rate = mut_rate or random.uniform(0, model.max_mut_rate)
         self.focus_angle = focus_angle or random.uniform(0, np.pi)
         self.view_range = view_range or random.uniform(0, model.max_view_range)
-
+        
+        # Data that will be collected at the end of each day for each agent
+        self.agent_type = 'Creature'
+        self.done_steps = 0
+        self.energy_used_for_movement = 0
+        self.energy_spent_on_observations = 0
+        self.energy_lost = 0
+        self.energy_of_happiness = 0
+        self.moment_of_first_consumption = None
+        self.moment_of_second_consumption = None
+        
     def find_candy(self):
         """Locates and returns the nearest candy, `None` if there isn't one."""
         neighbours = self.model.space.get_neighbors(
@@ -68,7 +78,9 @@ class Creature(Agent):
             2) focus, proportional to the tan(focus angle)
             3) vision energy, proportional to sqrt(vision_range)
         """
-        self.energy -= self.speed**2
+        dE = self.speed**2
+        self.energy -= dE
+        self.energy_used_for_movement += dE
 
     def move(self, food):
         """Moves `self.speed` units ahead.
@@ -117,6 +129,7 @@ class Creature(Agent):
         self.pos = new_pos
         self.model.space.move_agent(agent=self, pos=self.pos)
         self.moving_angle = theta
+        self.done_steps += 1
 
     def eat_candy(self, food):
         """Consume the `food` if it's not `None`.
@@ -127,13 +140,26 @@ class Creature(Agent):
             distance = self.model.space.get_distance(
                 pos_1=self.pos, pos_2=food.pos)
             if distance < self.speed * 2:
-                print(f"Agent {self} ate candy!")
+                # print(f"Agent {self} ate candy!")
                 food.eaten = True
                 self.eaten_candies += 1
+                
+                if not self.moment_of_first_consumption:
+                    self.moment_of_first_consumption = self.done_steps
+                else:
+                    self.moment_of_second_consumption = self.done_steps
                 
     def stage_0_prepare_for_new_day(self):
         self.energy = self.model.max_energy
         self.eaten_candies = 0
+
+        self.done_steps = 0
+        self.energy_used_for_movement = 0
+        self.energy_spent_on_observations = 0
+        self.energy_lost = 0
+        self.energy_of_happiness = 0
+        self.moment_of_first_consumption = None
+        self.moment_of_second_consumption = None
 
     def stage_1_compete(self):
         """
@@ -152,8 +178,16 @@ class Creature(Agent):
         """
         self.step()
 
-    def stage_2_evolve(self):
-        """Compete AND evolve."""
+    def stage_2_report(self):
+        """
+        Report some agent characteristics at the end of the day.
+        Used in DataCollector
+        """
+        if self.eaten_candies < 2:
+            self.energy_lost = self.energy
+        else:
+            self.energy_of_happiness = self.energy
+        
         # TODO: implement this
         self.step()
         print('EVOLUTION NOT IMPLEMENTED')
@@ -168,10 +202,10 @@ class Creature(Agent):
         Steps are repeated over the course of a day.
         """
         if self.energy > 0 and self.eaten_candies < 2:
-            print(f"Creature {self} has {self.energy} energy.")
+            # print(f"Creature {self} has {self.energy} energy.")
             food = self.find_candy()
-            if food:
-                print(f"Food found at {food.pos} by creature {self}!")
+            # if food:
+            #     print(f"Food found at {food.pos} by creature {self}!")
             self.expend_energy()
             self.move(food)
             self.eat_candy(food)
@@ -183,11 +217,23 @@ class Candy(Agent):
     It gets placed in a random spot on the board and does not evolve nor move
     around during each day, disappearing at dawn.
     """
-
     def __init__(self, unique_id, pos, model):
         super().__init__(unique_id=unique_id, model=model)
+        # Data used in simulation
         self.pos = pos
         self.eaten = False
+
+        # Data that will be collected at the end of each day for each agent
+        # We care of creature's data, but for compatibility to DataCollector
+        # all agents must have the same fields.
+        self.agent_type = 'Candy'
+        self.done_steps = None
+        self.energy_used_for_movement = None
+        self.energy_spent_on_observations = None
+        self.energy_lost = None
+        self.energy_of_happiness = None
+        self.moment_of_first_consumption = None
+        self.moment_of_second_consumption = None
 
     def stage_0_prepare_for_new_day(self):
         """No-op, the candy does not act."""
@@ -195,7 +241,7 @@ class Candy(Agent):
     def stage_1_compete(self):
         """No-op, the candy does not act."""
 
-    def stage_2_evolve(self):
+    def stage_2_report(self):
         """No-op, the candy does not act."""
 
     def step(self):

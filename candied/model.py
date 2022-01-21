@@ -53,12 +53,13 @@ class Evolution(Model):
         mut_rate=MUT_RATE,
         speed=MAX_SPEED,
         view_range=MAX_VIEW_RANGE,
+        max_steps_per_day=MAX_STEPS_PER_DAY
     ):
         super().__init__()
 
         # Set up model objects
         preparation_stage = ['stage_0_prepare_for_new_day']
-        compete_stages = ["stage_1_compete"] * 100
+        compete_stages = ["stage_1_compete"] * max_steps_per_day
         model_stages = preparation_stage + compete_stages
         self.schedule = StagedActivation(
             model=self, stage_list=model_stages, shuffle=True)
@@ -100,19 +101,34 @@ class Evolution(Model):
         self.running = True
         self.day = 0
 
-        # Collect some model data at the end of each day i.e. unused energy
+        # Collect some model data at the end of each day
         self.datacollector = DataCollector(
             model_reporters={
                 "Energy": lambda model: model.total_energy,
                 "Zero eaters": lambda model: model.count_eaters(0),
                 "One eaters": lambda model: model.count_eaters(1),
                 "Two eaters": lambda model: model.count_eaters(2),
-            })
-        
+            },
+            agent_reporters={
+                "Agent type": 'agent_type',
+                "Done steps": "done_steps",
+                'Energy used for movement': 'energy_used_for_movement',
+                'Energy spent on observations': 'energy_spent_on_observations',
+                'Energy lost': 'energy_lost',
+                'Energy of happiness': 'energy_of_happiness',
+                'Moment of first consumption': 'moment_of_first_consumption',
+                'Moment of second consumption': 'moment_of_second_consumption'
+            }
+        )
+
     def remove_old_candies(self):
         """
         Remove all candies at the end of each day.
         """
+        
+        candies = [a for a in self.schedule.agents if isinstance(a, Candy)]
+        print(f"There are {len(candies)} candies.")
+        
         for candy in filter(
                 lambda a: isinstance(a, Candy),
                 self.schedule.agents,
@@ -199,13 +215,12 @@ class Evolution(Model):
         ]
         random.shuffle(parents)
         
-        print(f"There are {len(parents)} parents")
+        print(f"In day {self.day} there are {len(parents)} parents")
         if len(parents) > 1:
             # Iterate over every pair of parents.
             # 2*(len(parents)//2) to avoid paring last parent if there is an
             # odd number of them.
             for i in range(0, 2*(len(parents)//2), 2):
-                print(i+1)
                 self.crossover(parents[i], parents[i + 1])
     
             # If there is an odd number of parents the last one was skipped
@@ -229,13 +244,12 @@ class Evolution(Model):
             self.place_new_candies()
         elif self.day == 1:
             self.place_new_candies()
-            
-        self.datacollector.collect(self)
 
         # Halt if all days passed
         if self.day < self.last_day:
             self.schedule.step()
             if isinstance(self.schedule, StagedActivation):
+                self.datacollector.collect(self)
                 self.evolve()
                 self.remove_old_candies()
         else:
