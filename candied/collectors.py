@@ -1,4 +1,8 @@
-from .agent import Creature, Candy
+"""Defines data collector functions.
+
+All functions take a single argument - `model` or `agent` and return a number
+that represents some meaningful value we wish to collect.
+"""
 
 
 def total_energy(model):
@@ -11,8 +15,7 @@ def avg_speed(model):
     creatures = list(model.creatures)
     if len(creatures) > 0:
         return sum(map(lambda a: a.speed, creatures)) / len(creatures)
-    else:
-        return 0
+    return 0
 
 
 def avg_view_range(model):
@@ -20,8 +23,7 @@ def avg_view_range(model):
     creatures = list(model.creatures)
     if len(creatures) > 0:
         return sum(map(lambda a: a.view_range, creatures), ) / len(creatures)
-    else:
-        return 0
+    return 0
 
 
 def avg_focus_angle(model):
@@ -29,8 +31,7 @@ def avg_focus_angle(model):
     creatures = list(model.creatures)
     if len(creatures) > 0:
         return sum(map(lambda a: a.focus_angle, creatures), ) / len(creatures)
-    else:
-        return 0
+    return 0
 
 
 def avg_mut_rate(model):
@@ -38,38 +39,22 @@ def avg_mut_rate(model):
     creatures = list(model.creatures)
     if len(creatures) > 0:
         return sum(map(lambda a: a.mut_rate, creatures), ) / len(creatures)
-    else:
-        return 0
+    return 0
 
 
 def count_zero_eaters(model):
     """Returns the number of creatures which have eaten `0` candies."""
-    return len(
-        [
-            a for a in model.schedule.agents
-            if isinstance(a, Creature) and a.eaten_candies == 0
-        ],
-    )
+    return len(list(filter(lambda c: c.eaten_candies == 0, model.creatures)))
 
 
 def count_one_eaters(model):
-    """Returns the number of creatures which have eaten `1` candies."""
-    return len(
-        [
-            a for a in model.schedule.agents
-            if isinstance(a, Creature) and a.eaten_candies == 1
-        ],
-    )
+    """Returns the number of creatures which have eaten `1` candy."""
+    return len(list(filter(lambda c: c.eaten_candies == 1, model.creatures)))
 
 
 def count_two_eaters(model):
     """Returns the number of creatures which have eaten `2` candies."""
-    return len(
-        [
-            a for a in model.schedule.agents
-            if isinstance(a, Creature) and a.eaten_candies == 2
-        ],
-    )
+    return len(list(filter(lambda c: c.eaten_candies == 2, model.creatures)))
 
 
 def count_creatures(model):

@@ -41,7 +41,7 @@ class Creature(Agent):
         self.mut_rate = mut_rate or random.uniform(0, model.max_mut_rate)
         self.focus_angle = focus_angle or random.uniform(0, np.pi)
         self.view_range = view_range or random.uniform(0, model.max_view_range)
-        
+
         # Data that will be collected at the end of each day for each agent
         self.agent_type = 'Creature'
         self.done_steps = 0
@@ -54,7 +54,7 @@ class Creature(Agent):
         self.moment_of_second_consumption = None
         self.age = 0
         self.made_children = 0
-        
+
     def find_candy(self):
         """Locates and returns the nearest candy, `None` if there isn't one."""
         neighbours = self.model.space.get_neighbors(
@@ -73,7 +73,7 @@ class Creature(Agent):
             default=None,
         )
         return nearest_candy
-    
+
     def expend_energy(self, apply=True):
         """
         Return energy needed for small step according to the genes.
@@ -86,19 +86,19 @@ class Creature(Agent):
         """
 
         # calculate each energy cost
-        KE = self.speed ** 2
+        KE = self.speed**2
         FE = 0
         VE = 0
-        
+
         dE = KE + FE + VE
         # decrease energy of the creature if apply=True
         if apply:
             self.energy -= dE
-            
+
             self.energy_used_for_movement += KE
             self.energy_spent_on_focus_angle += FE
             self.energy_spent_on_view_range += VE
-        
+
         return dE
 
     def move(self, food):
@@ -110,36 +110,21 @@ class Creature(Agent):
         """
         r = self.speed
         if food:
-            slope = (food.pos[1] - self.pos[1]) / (food.pos[0] - self.pos[0])
-            theta = math.atan(slope)
+            # Vector in the direction of food
+            x = food.pos[0] - self.pos[0]
+            y = food.pos[1] - self.pos[1]
+            # Make sure the vector's length is exactly r
+            x *= r / math.sqrt(x**2 + y**2)
+            y *= r / math.sqrt(x**2 + y**2)
+            # Roatate by a random angle as per focus_angle
+            d_theta = random.uniform(-self.focus_angle, self.focus_angle)
+            x = x * math.cos(d_theta) - y * math.sin(d_theta)
+            y = x * math.sin(d_theta) + y * math.cos(d_theta)
 
-            # decide in which direction among line creature should go
-            # TODO: there surely is a better way of doing this?
-            theta_1 = theta
-            dx = r * np.cos(theta_1)
-            dy = r * np.sin(theta_1)
+            new_pos = (self.pos[0] + x, self.pos[1] + y)
 
-            new_x = self.pos[0] + dx
-            new_y = self.pos[1] + dy
-            new_pos_1 = (new_x, new_y)
-            dist_1 = self.model.space.get_distance(
-                pos_1=new_pos_1, pos_2=food.pos)
-
-            theta_2 = theta + np.pi
-            dx = r * np.cos(theta_2)
-            dy = r * np.sin(theta_2)
-
-            new_x = self.pos[0] + dx
-            new_y = self.pos[1] + dy
-            new_pos_2 = (new_x, new_y)
-            dist_2 = self.model.space.get_distance(
-                pos_1=new_pos_2,
-                pos_2=food.pos,
-            )
-
-            new_pos = new_pos_1
-            if dist_2 < dist_1:
-                new_pos = new_pos_2
+            # Convert to angle (for the purpouse of `moving_angle`)
+            theta = math.atan(y / x) + d_theta
 
         else:
             theta = self.moving_angle + random.uniform(
@@ -219,7 +204,7 @@ class Creature(Agent):
             self.energy_lost = self.energy
         else:
             self.energy_of_happiness = self.energy
-            
+
         self.age += 1
 
     def step(self):
@@ -248,6 +233,7 @@ class Candy(Agent):
     It gets placed in a random spot on the board and does not evolve nor move
     around during each day, disappearing at dawn.
     """
+
     def __init__(self, unique_id, pos, model):
         super().__init__(unique_id=unique_id, model=model)
         # Data used in simulation

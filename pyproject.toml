@@ -8,6 +8,8 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 Mesa = "~=0.8.9"
+dill = "^0.3.4"
+tabulate = "^0.8.9"
 
 [tool.poetry.dev-dependencies]
 
