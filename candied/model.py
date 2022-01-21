@@ -298,25 +298,37 @@ class Evolution(Model):
     def avg_speed(self):
         """Returns the average speed of the current population."""
         creatures = list(self.creatures)
-        return sum(map(lambda a: a.speed, creatures)) / len(creatures)
+        if len(creatures) > 0:
+            return sum(map(lambda a: a.speed, creatures)) / len(creatures)
+        else:
+            return 0
 
     @property
     def avg_view_range(self):
         """Returns the average view range of the current population."""
         creatures = list(self.creatures)
-        return sum(map(lambda a: a.view_range, creatures), ) / len(creatures)
+        if len(creatures) > 0:
+            return sum(map(lambda a: a.view_range, creatures), ) / len(creatures)
+        else:
+            return 0
 
     @property
     def avg_focus_angle(self):
         """Returns the average focus angle of the current population."""
         creatures = list(self.creatures)
-        return sum(map(lambda a: a.focus_angle, creatures), ) / len(creatures)
+        if len(creatures) > 0:
+            return sum(map(lambda a: a.focus_angle, creatures), ) / len(creatures)
+        else:
+            return 0
 
     @property
     def avg_mut_rate(self):
         """Returns the average mutation rate of the current population."""
         creatures = list(self.creatures)
-        return sum(map(lambda a: a.mut_rate, creatures), ) / len(creatures)
+        if len(creatures) > 0:
+            return sum(map(lambda a: a.mut_rate, creatures), ) / len(creatures)
+        else:
+            return 0
 
     def count_eaters(self, i):
         """Returns the number of creatures which have eaten `i` candies."""

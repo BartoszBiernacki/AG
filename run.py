@@ -1,6 +1,10 @@
 """Run the visualization server."""
+import cProfile
+import pstats
+import dill
+
 from candied.server import server
-from mesa.batchrunner import BatchRunner
+from mesa.batchrunner import BatchRunner, BatchRunnerMP
 
 from candied.model import Evolution
 # from candied.mesa_batchrunner_modified import BatchRunnerMP
@@ -11,7 +15,7 @@ def run_in_background():
         "height": 10,
         "width": 10,
         "n_creatures": 10,
-        "max_days": 7,
+        "max_days": 30,
         "energy": 500,
         "mut_rate": 0.25,
         "speed": 10,
@@ -57,4 +61,9 @@ if __name__ == '__main__':
     if run_in_browser:
         server.launch()
     else:
-        run_in_background()
+        with cProfile.Profile() as pr:
+            run_in_background()
+        stats = pstats.Stats(pr)
+        stats.sort_stats(pstats.SortKey.TIME)
+        stats.print_stats(5)
+        
