@@ -46,7 +46,8 @@ class Creature(Agent):
         self.agent_type = 'Creature'
         self.done_steps = 0
         self.energy_used_for_movement = 0
-        self.energy_spent_on_observations = 0
+        self.energy_spent_on_view_range = 0
+        self.energy_spent_on_focus_angle = 0
         self.energy_lost = 0
         self.energy_of_happiness = 0
         self.moment_of_first_consumption = None
@@ -70,18 +71,33 @@ class Creature(Agent):
             default=None,
         )
         return nearest_candy
-
-    def expend_energy(self):
-        """Expend energy according to the genes.
+    
+    def expend_energy(self, apply=True):
+        """
+        Return energy needed for small step according to the genes.
+        If apply=True: energy is taken from creature.
 
         Energy spend is a sum of:
             1) kinetic energy, proportional to speed^2;
             2) focus, proportional to the tan(focus angle)
             3) vision energy, proportional to sqrt(vision_range)
         """
-        dE = self.speed**2
-        self.energy -= dE
-        self.energy_used_for_movement += dE
+
+        # calculate each energy cost
+        KE = self.speed ** 2
+        FE = 0
+        VE = 0
+        
+        dE = KE + FE + VE
+        # decrease energy of the creature if apply=True
+        if apply:
+            self.energy -= dE
+            
+            self.energy_used_for_movement += KE
+            self.energy_spent_on_focus_angle += FE
+            self.energy_spent_on_view_range += VE
+        
+        return dE
 
     def move(self, food):
         """Moves `self.speed` units ahead.
@@ -200,10 +216,6 @@ class Creature(Agent):
             self.energy_lost = self.energy
         else:
             self.energy_of_happiness = self.energy
-        
-        # TODO: implement this
-        self.step()
-        print('EVOLUTION NOT IMPLEMENTED')
 
     def step(self):
         """Single simulation time step.

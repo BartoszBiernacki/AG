@@ -3,7 +3,7 @@ from candied.server import server
 from mesa.batchrunner import BatchRunner
 
 from candied.model import Evolution
-from candied.mesa_batchrunner_modified import BatchRunnerMP
+# from candied.mesa_batchrunner_modified import BatchRunnerMP
 
 
 def run_in_background():
@@ -42,17 +42,13 @@ def run_in_background():
     model_data = batch_run.get_collector_model()  # For each model reporters
     agent_data = batch_run.get_collector_agents()  # For each agent reporter
     
-    # for key, df in model_data.items():
-    #     print(key)
-    #     print(df)
-    #     print()
-    #     print()
-    
+    for key, df in model_data.items():
+        print(key)
+        print(df.to_markdown())
+
     for key, df in agent_data.items():
         print(key)
         print(df.to_markdown())
-        print()
-        print()
 
 
 run_in_browser = False

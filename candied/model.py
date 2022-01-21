@@ -60,7 +60,8 @@ class Evolution(Model):
         # Set up model objects
         preparation_stage = ['stage_0_prepare_for_new_day']
         compete_stages = ["stage_1_compete"] * max_steps_per_day
-        model_stages = preparation_stage + compete_stages
+        report_stage = ['stage_2_report']
+        model_stages = preparation_stage + compete_stages + report_stage
         self.schedule = StagedActivation(
             model=self,
             stage_list=model_stages,
@@ -248,7 +249,6 @@ class Evolution(Model):
             # 2*(len(parents)//2) to avoid paring last parent if there is an
             # odd number of them.
             for i in range(0, 2 * (len(parents) // 2), 2):
-                print(i + 1)
                 self.crossover(parents[i], parents[i + 1])
 
             # If there is an odd number of parents the last one was skipped
