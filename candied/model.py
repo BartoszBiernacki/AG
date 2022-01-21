@@ -58,16 +58,24 @@ class Evolution(Model):
 
         # Set up model objects
         preparation_stage = ['stage_0_prepare_for_new_day']
-        compete_stages = ["stage_1_compete"] * 100
+        compete_stages = ['stage_1_compete'] * 100
         model_stages = preparation_stage + compete_stages
         self.schedule = StagedActivation(
-            model=self, stage_list=model_stages, shuffle=True)
+            model=self,
+            stage_list=model_stages,
+            shuffle=True,
+        )
 
         # to demonstrate what is going on with staged activation
         # self.schedule = RandomActivation(model=self)
 
         self.space = ContinuousSpace(
-            x_max=width, y_max=height, torus=True, x_min=0, y_min=0)
+            x_max=width,
+            y_max=height,
+            torus=True,
+            x_min=0,
+            y_min=0,
+        )
 
         self.current_id = 0
         self.n_creatures = n_creatures
@@ -84,10 +92,7 @@ class Evolution(Model):
 
         # Place creatures
         for _ in range(self.n_creatures):
-            pos = (
-                random.uniform(a=0, b=self.width),
-                random.uniform(a=0, b=self.height),
-            )
+            pos = self.random_pos()
             new_creature = Creature(
                 unique_id=self.next_id(),
                 pos=pos,
@@ -95,44 +100,54 @@ class Evolution(Model):
             )
             self.space.place_agent(agent=new_creature, pos=pos)
             self.schedule.add(new_creature)
-        
+
         # Allow to run simulations in background by using BatchRunner
         self.running = True
         self.day = 0
 
-        # Collect some model data at the end of each day i.e. unused energy
+        # Collect some model data at the end of each day
         self.datacollector = DataCollector(
             model_reporters={
-                "Energy": lambda model: model.total_energy,
-                "Zero eaters": lambda model: model.count_eaters(0),
-                "One eaters": lambda model: model.count_eaters(1),
-                "Two eaters": lambda model: model.count_eaters(2),
-            })
-        
-    def remove_old_candies(self):
-        """
-        Remove all candies at the end of each day.
-        """
-        for candy in filter(
-                lambda a: isinstance(a, Candy),
-                self.schedule.agents,
-        ):
-            self.schedule.remove(candy)
-            
-    def place_new_candies(self):
-        """
-        Place new candies at the beginning of each day.
-        """
-        for _ in range(self.n_candies):
-            pos = (
-                random.uniform(a=0, b=self.width),
-                random.uniform(a=0, b=self.height),
-            )
-        
-            new_candy = Candy(unique_id=self.next_id(), pos=pos, model=self)
-            self.space.place_agent(agent=new_candy, pos=pos)
-            self.schedule.add(new_candy)
-        
+                "Energy":
+                lambda model: model.total_energy / len(list(model.creatures)),
+                "Speed":
+                lambda model: model.avg_speed,
+                "View":
+                lambda model: model.avg_view_range,
+                "Focus":
+                lambda model: model.avg_focus_angle,
+                "Mut":
+                lambda model: model.avg_mut_rate,
+                "Creatures":
+                lambda model: len(list(model.creatures)),
+                "Candies":
+                lambda model: len(list(model.candies)),
+                "Zero eaters":
+                lambda model: model.count_eaters(0),
+                "One eaters":
+                lambda model: model.count_eaters(1),
+                "Two eaters":
+                lambda model: model.count_eaters(2),
+            },
+        )
+
+    @property
+    def creatures(self):
+        """Iterator over creature-agents."""
+        return filter(lambda a: isinstance(a, Creature), self.schedule.agents)
+
+    @property
+    def candies(self):
+        """Iterator over candy-agents."""
+        return filter(lambda a: isinstance(a, Candy), self.schedule.agents)
+
+    def random_pos(self):
+        """Returns a tuple of ranodmized `(x,y)` coordinates."""
+        return (
+            random.uniform(0, self.width),
+            random.uniform(0, self.height),
+        )
+
     def crossover(self, *parents):
         """Perform a crossover between `parents`.
 
@@ -152,15 +167,7 @@ class Evolution(Model):
             view_range = mix * p1.view_range + (1 - mix) * p2.view_range
             mut_rate = mix * p1.mut_rate + (1 - mix) * p2.mut_rate
 
-            # Mutate
-            focus_angle += mut_rate * random.gauss(0, 1)
-            view_range += mut_rate * random.gauss(0, 1)
-            speed += mut_rate * random.gauss(0, 1)
-
-            pos = (
-                random.uniform(0, self.width),
-                random.uniform(0, self.height),
-            )
+            pos = self.random_pos()
 
             offspring = Creature(
                 speed=speed,
@@ -171,6 +178,7 @@ class Evolution(Model):
                 unique_id=self.next_id(),
                 model=self,
             )
+            offspring.mutate()
             self.space.place_agent(agent=offspring, pos=pos)
             self.schedule.add(offspring)
 
@@ -179,78 +187,123 @@ class Evolution(Model):
 
         The creatures are processed as follows:
             a) if they ate no candies they die;
-            b) if they ate 1 candy they survive, but recieve a 50% energy
-               penalty the next day;
-            c) if they ate 2 candies they become parents and reproduce by
-               pairing randomly to produce offspring as described in
-               `self.crossover()`.
+            b) if they ate 1 candy they survive, but receive a flat 25% energy
+               penalty the next day. If the penalty reaches 100% they are
+               killed off;
+            c) if they ate 2 candies they become parents reproduce by pairing
+               randomly to produce offspring as described in `self.crossover()`.
+               Their penalty is reset.
         """
-        # Kill the weak
-        for weak in filter(
-                lambda a: isinstance(a, Creature) and a.eaten_candies == 0,
-                self.schedule.agents,
-        ):
-            self.schedule.remove(weak)
+        # Deal with the creatures appropriately
+        parents = []
+        for creature in self.creatures:
 
-        # The strong procreate
-        parents = [
-            a for a in self.schedule.agents
-            if isinstance(a, Creature) and a.eaten_candies == 2
-        ]
+            if creature.eaten_candies == 0:
+                self.schedule.remove(creature)
+
+            elif creature.eaten_candies == 1:
+                creature.penalty += 0.25
+                if creature.penalty >= 0.999999:
+                    self.schedule.remove(creature)
+
+            else:
+                creature.penalty = 0
+                parents.append(creature)
+
         random.shuffle(parents)
-        
         print(f"There are {len(parents)} parents")
-        if len(parents) > 1:
+
+        if len(parents) == 1:
+            # Clone the single parent and mutate
+            parent = parents[0]
+
+            pos = self.random_pos()
+            offspring = Creature(
+                speed=parent.speed,
+                focus_angle=parent.focus_angle,
+                view_range=parent.view_range,
+                pos=pos,
+                mut_rate=parent.mut_rate,
+                unique_id=self.next_id(),
+                model=self,
+            )
+            offspring.mutate()
+            self.space.place_agent(agent=offspring, pos=pos)
+            self.schedule.add(offspring)
+
+        elif len(parents) > 1:
             # Iterate over every pair of parents.
             # 2*(len(parents)//2) to avoid paring last parent if there is an
             # odd number of them.
-            for i in range(0, 2*(len(parents)//2), 2):
-                print(i+1)
+            for i in range(0, 2 * (len(parents) // 2), 2):
+                print(i + 1)
                 self.crossover(parents[i], parents[i + 1])
-    
+
             # If there is an odd number of parents the last one was skipped
             # so pair him with a random partner.
-            
             if len(parents) % 2 == 1:
                 self.crossover(parents[-1], random.choice(parents[:-1]))
 
     def step(self):
-        """
-        Determines what will happened in one full step of simulation.
-        
-        If self.schedule is RandomActivation (good for visualisation one full
+        """Determines what will happened in one full step of simulation.
+
+        If self.schedule is RandomActivation (good for visualising one full
         day) than step is an elementary update of all agents.
-        
+
         If self.schedule is StagedActivation (good for visualisation progress
         of population) than step is an entire day.
         """
         self.day += 1
-        if isinstance(self.schedule, StagedActivation):
-            self.place_new_candies()
-        elif self.day == 1:
-            self.place_new_candies()
-            
-        self.datacollector.collect(self)
+        if self.day == 1 or isinstance(self.schedule, StagedActivation):
+            for _ in range(self.n_candies):
+                pos = self.random_pos()
+                new_candy = Candy(
+                    unique_id=self.next_id(), pos=pos, model=self)
+                self.space.place_agent(agent=new_candy, pos=pos)
+                self.schedule.add(new_candy)
 
+        self.datacollector.collect(self)
         # Halt if all days passed
         if self.day < self.last_day:
             self.schedule.step()
             if isinstance(self.schedule, StagedActivation):
                 self.evolve()
-                self.remove_old_candies()
+                # Remove old candies
+                for candy in self.candies:
+                    self.schedule.remove(candy)
         else:
             self.running = False
 
+    # DATA COLLECTION
+    # ---------------
     @property
     def total_energy(self):
         """Returns total energy of the population."""
-        return sum(
-            [
-                a.energy
-                for a in self.schedule.agents
-                if isinstance(a, Creature)
-            ],
-        )
+        return sum(map(lambda a: a.energy, self.creatures))
+
+    @property
+    def avg_speed(self):
+        """Returns the average speed of the current population."""
+        creatures = list(self.creatures)
+        return sum(map(lambda a: a.speed, creatures)) / len(creatures)
+
+    @property
+    def avg_view_range(self):
+        """Returns the average view range of the current population."""
+        creatures = list(self.creatures)
+        return sum(map(lambda a: a.view_range, creatures), ) / len(creatures)
+
+    @property
+    def avg_focus_angle(self):
+        """Returns the average focus angle of the current population."""
+        creatures = list(self.creatures)
+        return sum(map(lambda a: a.focus_angle, creatures), ) / len(creatures)
+
+    @property
+    def avg_mut_rate(self):
+        """Returns the average mutation rate of the current population."""
+        creatures = list(self.creatures)
+        return sum(map(lambda a: a.mut_rate, creatures), ) / len(creatures)
 
     def count_eaters(self, i):
         """Returns the number of creatures which have eaten `i` candies."""

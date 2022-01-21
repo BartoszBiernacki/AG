@@ -34,6 +34,7 @@ class Creature(Agent):
         self.energy = model.max_energy
         self.moving_angle = random.uniform(0, 2 * np.pi)
         self.eaten_candies = 0
+        self.penalty = 0
 
         # Genes
         self.speed = speed or random.uniform(0, model.max_speed)
@@ -102,14 +103,19 @@ class Creature(Agent):
             new_y = self.pos[1] + dy
             new_pos_2 = (new_x, new_y)
             dist_2 = self.model.space.get_distance(
-                pos_1=new_pos_2, pos_2=food.pos)
+                pos_1=new_pos_2,
+                pos_2=food.pos,
+            )
 
             new_pos = new_pos_1
             if dist_2 < dist_1:
                 new_pos = new_pos_2
 
         else:
-            theta = self.moving_angle + random.uniform(-0.5 * np.pi , 0.5 * np.pi)
+            theta = self.moving_angle + random.uniform(
+                -0.5 * np.pi,
+                0.5 * np.pi,
+            )
             dx = r * np.cos(theta)
             dy = r * np.sin(theta)
             new_pos = (self.pos[0] + dx, self.pos[1] + dy)
@@ -117,6 +123,12 @@ class Creature(Agent):
         self.pos = new_pos
         self.model.space.move_agent(agent=self, pos=self.pos)
         self.moving_angle = theta
+
+    def mutate(self):
+        """Change the genes according to `self.mut_rate`."""
+        self.focus_angle += self.mut_rate * random.gauss(0, 1)
+        self.view_range += self.mut_rate * random.gauss(0, 1)
+        self.speed += self.mut_rate * random.gauss(0, 1)
 
     def eat_candy(self, food):
         """Consume the `food` if it's not `None`.
@@ -130,20 +142,23 @@ class Creature(Agent):
                 print(f"Agent {self} ate candy!")
                 food.eaten = True
                 self.eaten_candies += 1
-                
+
     def stage_0_prepare_for_new_day(self):
-        self.energy = self.model.max_energy
+        """Preparation step.
+
+        The number of candies eaten is reset and the energy is set to
+        `(1 - penalty) * max_energy`.
+        """
+        self.energy = (1 - self.penalty) * self.model.max_energy
         self.eaten_candies = 0
 
     def stage_1_compete(self):
-        """
-        Single simulation time step.
-        Only run around and eat, do not evolve.
-        
+        """Single simulation time step. Only run around and eat, do not evolve.
+
         Repeat this stage a bunch of time in model scheduler =
         StagedActivation to achieve full one day of competition among all
         creatures.
-        
+
         Do repetition in StagedActivation with shuffle=True, to obtain
         simultaneous move of all creatures. If repetition would be done here
         by: for _ in range(100): self.step
@@ -151,12 +166,6 @@ class Creature(Agent):
         would be unfair.
         """
         self.step()
-
-    def stage_2_evolve(self):
-        """Compete AND evolve."""
-        # TODO: implement this
-        self.step()
-        print('EVOLUTION NOT IMPLEMENTED')
 
     def step(self):
         """Single simulation time step.
@@ -191,7 +200,7 @@ class Candy(Agent):
 
     def stage_0_prepare_for_new_day(self):
         """No-op, the candy does not act."""
-        
+
     def stage_1_compete(self):
         """No-op, the candy does not act."""
 
