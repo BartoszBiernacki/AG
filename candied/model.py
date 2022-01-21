@@ -53,12 +53,13 @@ class Evolution(Model):
         mut_rate=MUT_RATE,
         speed=MAX_SPEED,
         view_range=MAX_VIEW_RANGE,
+        max_steps_per_day=MAX_STEPS_PER_DAY
     ):
         super().__init__()
 
         # Set up model objects
         preparation_stage = ['stage_0_prepare_for_new_day']
-        compete_stages = ['stage_1_compete'] * 100
+        compete_stages = ["stage_1_compete"] * max_steps_per_day
         model_stages = preparation_stage + compete_stages
         self.schedule = StagedActivation(
             model=self,
@@ -109,7 +110,7 @@ class Evolution(Model):
         self.datacollector = DataCollector(
             model_reporters={
                 "Energy":
-                lambda model: model.total_energy / len(list(model.creatures)),
+                lambda model: model.total_energy,
                 "Speed":
                 lambda model: model.avg_speed,
                 "View":
@@ -129,6 +130,17 @@ class Evolution(Model):
                 "Two eaters":
                 lambda model: model.count_eaters(2),
             },
+            agent_reporters={
+                "Agent type": 'agent_type',
+                "Done steps": "done_steps",
+                'Energy used for movement': 'energy_used_for_movement',
+                'Energy spent on observations': 'energy_spent_on_observations',
+                'Energy lost': 'energy_lost',
+                'Energy of happiness': 'energy_of_happiness',
+                'Moment of first consumption': 'moment_of_first_consumption',
+                'Moment of second consumption': 'moment_of_second_consumption'
+            }
+
         )
 
     @property
@@ -211,10 +223,10 @@ class Evolution(Model):
                 parents.append(creature)
 
         random.shuffle(parents)
-        print(f"There are {len(parents)} parents")
+        print(f"In day {self.day} there are {len(parents)} parents")
 
         if len(parents) == 1:
-            # Clone the single parent and mutate
+            # Clone the single parent and mutate the offspring
             parent = parents[0]
 
             pos = self.random_pos()
@@ -255,6 +267,7 @@ class Evolution(Model):
         """
         self.day += 1
         if self.day == 1 or isinstance(self.schedule, StagedActivation):
+            # Place new candies
             for _ in range(self.n_candies):
                 pos = self.random_pos()
                 new_candy = Candy(
@@ -262,11 +275,11 @@ class Evolution(Model):
                 self.space.place_agent(agent=new_candy, pos=pos)
                 self.schedule.add(new_candy)
 
-        self.datacollector.collect(self)
         # Halt if all days passed
         if self.day < self.last_day:
             self.schedule.step()
             if isinstance(self.schedule, StagedActivation):
+                self.datacollector.collect(self)
                 self.evolve()
                 # Remove old candies
                 for candy in self.candies:
