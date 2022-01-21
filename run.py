@@ -1,6 +1,7 @@
 """Run the visualization server."""
 import cProfile
 import pstats
+import matplotlib.pyplot as plt
 
 from candied.server import server
 from mesa.batchrunner import BatchRunner
@@ -14,10 +15,10 @@ def run_in_background():
         "height": 200,
         "width": 200,
         "n_creatures": 10,
-        "max_days": 5,
+        "max_days": 50,
         "energy": 500,
         "mut_rate": 3,
-        "speed": 7,
+        "speed": 10,
         "view_range": 8,
         "max_steps_per_day": 100
     }
@@ -38,12 +39,14 @@ def run_in_background():
     model_data = batch_run.get_collector_model()  # For each model reporters
     agent_data = batch_run.get_collector_agents()  # For each agent reporter
     
-    # for key, df in model_data.items():
-    #     print(key)
-    #
-    #     print(df.to_markdown())
-    #     # fig, ax = plt.subplots(111)
-    #     # df.plot[]
+    for key, df in model_data.items():
+        print(key)
+        print(df.to_markdown())
+        df['Speed'].plot()
+        
+        plt.show()
+        # fig, ax = plt.subplots(111)
+        # df.plot[]
 
     for key, df in agent_data.items():
         # print(key)

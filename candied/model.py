@@ -3,6 +3,7 @@
 Defines the Evolution model class.
 """
 import random
+import time
 
 from mesa import Model
 from mesa.datacollection import DataCollector
@@ -121,6 +122,9 @@ class Evolution(Model):
                 "Zero eaters": count_zero_eaters,
                 "One eaters": count_one_eaters,
                 "Two eaters": count_two_eaters,
+                "Avg steps by zero eaters": avg_steps_by_zero_eaters,
+                "Avg steps by one eaters": avg_steps_by_one_eaters,
+                "Avg steps by two eaters": avg_steps_by_two_eaters,
             },
             agent_reporters={
                 "Agent type": 'agent_type',
@@ -255,7 +259,10 @@ class Evolution(Model):
         If self.schedule is StagedActivation (good for visualisation progress
         of population) than step is an entire day.
         """
+        start_time = time.time()
+        
         self.day += 1
+        print(f'Day {self.day}')
         if self.day == 1 or isinstance(self.schedule, StagedActivation):
             # Place new candies
             for _ in range(self.n_candies):
@@ -276,6 +283,7 @@ class Evolution(Model):
                     self.schedule.remove(candy)
         else:
             self.running = False
+        print("--- %s seconds ---" % (time.time() - start_time))
     
     @property
     def creatures(self):

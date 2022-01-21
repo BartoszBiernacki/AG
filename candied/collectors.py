@@ -1,3 +1,5 @@
+import numpy as np
+
 from .agent import Creature, Candy
 
 
@@ -67,6 +69,36 @@ def count_two_eaters(model):
     return len(
         [
             a for a in model.schedule.agents
+            if isinstance(a, Creature) and a.eaten_candies == 2
+        ],
+    )
+
+
+def avg_steps_by_zero_eaters(model):
+    """Returns average number of steps of zero eaters."""
+    return np.average(
+        [
+            a.done_steps for a in model.schedule.agents
+            if isinstance(a, Creature) and a.eaten_candies == 0
+        ],
+    )
+
+
+def avg_steps_by_one_eaters(model):
+    """Returns average number of steps of zero eaters."""
+    return np.average(
+        [
+            a.done_steps for a in model.schedule.agents
+            if isinstance(a, Creature) and a.eaten_candies == 1
+        ],
+    )
+
+
+def avg_steps_by_two_eaters(model):
+    """Returns average number of steps of zero eaters."""
+    return np.average(
+        [
+            a.done_steps for a in model.schedule.agents
             if isinstance(a, Creature) and a.eaten_candies == 2
         ],
     )
