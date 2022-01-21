@@ -7,24 +7,23 @@ from mesa.batchrunner import BatchRunner
 from mesa.batchrunner import BatchRunnerMP
 
 from candied.model import Evolution
-# from candied.mesa_batchrunner_modified import BatchRunnerMP
 
 
 def run_in_background():
     fixed_params = {
-        "height": 10,
-        "width": 10,
+        "height": 200,
+        "width": 200,
         "n_creatures": 10,
-        "max_days": 30,
+        "max_days": 5,
         "energy": 500,
-        "mut_rate": 0.25,
-        "speed": 10,
-        "view_range": 5,
+        "mut_rate": 3,
+        "speed": 7,
+        "view_range": 8,
         "max_steps_per_day": 100
     }
 
     variable_params = {
-        "n_candies": [20]
+        "n_candies": [100]
     }
     
     batch_run = BatchRunnerMP(
@@ -39,13 +38,16 @@ def run_in_background():
     model_data = batch_run.get_collector_model()  # For each model reporters
     agent_data = batch_run.get_collector_agents()  # For each agent reporter
     
-    
     # for key, df in model_data.items():
     #     print(key)
+    #
     #     print(df.to_markdown())
+    #     # fig, ax = plt.subplots(111)
+    #     # df.plot[]
 
     for key, df in agent_data.items():
-        print(key)
+        # print(key)
+        df = df.loc[df["Agent type"] == 'Creature']
         print(df.to_markdown())
 
 

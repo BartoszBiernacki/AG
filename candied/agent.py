@@ -52,6 +52,8 @@ class Creature(Agent):
         self.energy_of_happiness = 0
         self.moment_of_first_consumption = None
         self.moment_of_second_consumption = None
+        self.age = 0
+        self.made_children = 0
         
     def find_candy(self):
         """Locates and returns the nearest candy, `None` if there isn't one."""
@@ -167,7 +169,7 @@ class Creature(Agent):
         if food:
             distance = self.model.space.get_distance(
                 pos_1=self.pos, pos_2=food.pos)
-            if distance < self.speed * 2:
+            if distance < self.speed * 0.5:
                 # print(f"Agent {self} ate candy!")
                 food.eaten = True
                 self.eaten_candies += 1
@@ -217,6 +219,8 @@ class Creature(Agent):
             self.energy_lost = self.energy
         else:
             self.energy_of_happiness = self.energy
+            
+        self.age += 1
 
     def step(self):
         """Single simulation time step.
@@ -262,6 +266,12 @@ class Candy(Agent):
         self.energy_of_happiness = None
         self.moment_of_first_consumption = None
         self.moment_of_second_consumption = None
+        self.speed = None
+        self.mut_rate = None
+        self.focus_angle = None
+        self.view_range = None
+        self.age = None
+        self.made_children = None
 
     def stage_0_prepare_for_new_day(self):
         """No-op, the candy does not act."""

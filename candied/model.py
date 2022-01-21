@@ -37,27 +37,27 @@ class Evolution(Model):
     CREATURES = 5
     CANDIES = 10
     MAX_DAYS = 30
-    ENERGY = 500
+    ENERGY = 5000000
     MUT_RATE = 0.25
     MAX_SPEED = 10
-    MAX_VIEW_RANGE = 5
+    MAX_VIEW_RANGE = 50
     MAX_STEPS_PER_DAY = 100
-
+    
     def __init__(
-        self,
-        height=HEIGHT,
-        width=WIDTH,
-        n_creatures=CREATURES,
-        n_candies=CANDIES,
-        max_days=MAX_DAYS,
-        energy=ENERGY,
-        mut_rate=MUT_RATE,
-        speed=MAX_SPEED,
-        view_range=MAX_VIEW_RANGE,
-        max_steps_per_day=MAX_STEPS_PER_DAY
+            self,
+            height=HEIGHT,
+            width=WIDTH,
+            n_creatures=CREATURES,
+            n_candies=CANDIES,
+            max_days=MAX_DAYS,
+            energy=ENERGY,
+            mut_rate=MUT_RATE,
+            speed=MAX_SPEED,
+            view_range=MAX_VIEW_RANGE,
+            max_steps_per_day=MAX_STEPS_PER_DAY
     ):
         super().__init__()
-
+        
         # Set up model objects
         preparation_stage = ['stage_0_prepare_for_new_day']
         compete_stages = ["stage_1_compete"] * max_steps_per_day
@@ -68,10 +68,10 @@ class Evolution(Model):
             stage_list=model_stages,
             shuffle=True,
         )
-
+        
         # to demonstrate what is going on with staged activation
         # self.schedule = RandomActivation(model=self)
-
+        
         self.space = ContinuousSpace(
             x_max=width,
             y_max=height,
@@ -79,20 +79,20 @@ class Evolution(Model):
             x_min=0,
             y_min=0,
         )
-
+        
         self.current_id = 0
         self.n_creatures = n_creatures
         self.n_candies = n_candies
         self.last_day = max_days
         self.height = height
         self.width = width
-
+        
         # Base creature boundaries
         self.max_energy = energy
         self.max_speed = speed
         self.max_view_range = view_range
         self.max_mut_rate = mut_rate
-
+        
         # Place creatures
         for _ in range(self.n_creatures):
             pos = self.random_pos()
@@ -103,7 +103,7 @@ class Evolution(Model):
             )
             self.space.place_agent(agent=new_creature, pos=pos)
             self.schedule.add(new_creature)
-
+        
         # Allow to run simulations in background by using BatchRunner
         self.running = True
         self.day = 0
@@ -124,6 +124,11 @@ class Evolution(Model):
             },
             agent_reporters={
                 "Agent type": 'agent_type',
+                'Age': 'age',
+                'Speed': 'speed',
+                'View range': 'view_range',
+                'Focus angle': 'focus_angle',
+                'Mut rate': 'mut_rate',
                 "Done steps": "done_steps",
                 'Energy used for movement': 'energy_used_for_movement',
                 'Energy spent on view range': 'energy_spent_on_view_range',
@@ -131,17 +136,18 @@ class Evolution(Model):
                 'Energy lost': 'energy_lost',
                 'Energy of happiness': 'energy_of_happiness',
                 'Moment of first consumption': 'moment_of_first_consumption',
-                'Moment of second consumption': 'moment_of_second_consumption'
+                'Moment of second consumption': 'moment_of_second_consumption',
+                'Children': 'made_children'
             }
         )
-
+        
     def random_pos(self):
         """Returns a tuple of ranodmized `(x,y)` coordinates."""
         return (
             random.uniform(0, self.width),
             random.uniform(0, self.height),
         )
-
+    
     def crossover(self, *parents):
         """Perform a crossover between `parents`.
 
@@ -150,19 +156,22 @@ class Evolution(Model):
         to a mix of parents' mutation rates and placed randomly.
         """
         mix = random.uniform(0, 1)
-
+        
         for i in [0, 1]:
             p1 = parents[i]
             p2 = parents[i ^ 1]
-
+            
+            p1.made_children += 1
+            p2.made_children += 1
+            
             # Crossover
             speed = mix * p1.speed + (1 - mix) * p2.speed
             focus_angle = mix * p1.focus_angle + (1 - mix) * p2.focus_angle
             view_range = mix * p1.view_range + (1 - mix) * p2.view_range
             mut_rate = mix * p1.mut_rate + (1 - mix) * p2.mut_rate
-
+            
             pos = self.random_pos()
-
+            
             offspring = Creature(
                 speed=speed,
                 focus_angle=focus_angle,
@@ -175,7 +184,7 @@ class Evolution(Model):
             offspring.mutate()
             self.space.place_agent(agent=offspring, pos=pos)
             self.schedule.add(offspring)
-
+    
     def evolve(self):
         """Evolves the creatures at the end of the day.
 
@@ -191,26 +200,26 @@ class Evolution(Model):
         # Deal with the creatures appropriately
         parents = []
         for creature in self.creatures:
-
+            
             if creature.eaten_candies == 0:
                 self.schedule.remove(creature)
-
+            
             elif creature.eaten_candies == 1:
                 creature.penalty += 0.25
                 if creature.penalty >= 0.999999:
                     self.schedule.remove(creature)
-
+            
             else:
                 creature.penalty = 0
                 parents.append(creature)
-
+        
         random.shuffle(parents)
         # print(f"In day {self.day} there are {len(parents)} parents")
-
+        
         if len(parents) == 1:
             # Clone the single parent and mutate the offspring
             parent = parents[0]
-
+            
             pos = self.random_pos()
             offspring = Creature(
                 speed=parent.speed,
@@ -224,19 +233,19 @@ class Evolution(Model):
             offspring.mutate()
             self.space.place_agent(agent=offspring, pos=pos)
             self.schedule.add(offspring)
-
+        
         elif len(parents) > 1:
             # Iterate over every pair of parents.
             # 2*(len(parents)//2) to avoid paring last parent if there is an
             # odd number of them.
             for i in range(0, 2 * (len(parents) // 2), 2):
                 self.crossover(parents[i], parents[i + 1])
-
+            
             # If there is an odd number of parents the last one was skipped
             # so pair him with a random partner.
             if len(parents) % 2 == 1:
                 self.crossover(parents[-1], random.choice(parents[:-1]))
-
+    
     def step(self):
         """Determines what will happened in one full step of simulation.
 
@@ -255,7 +264,7 @@ class Evolution(Model):
                     unique_id=self.next_id(), pos=pos, model=self)
                 self.space.place_agent(agent=new_candy, pos=pos)
                 self.schedule.add(new_candy)
-
+        
         # Halt if all days passed
         if self.day < self.last_day:
             self.schedule.step()
@@ -267,13 +276,14 @@ class Evolution(Model):
                     self.schedule.remove(candy)
         else:
             self.running = False
-
+    
     @property
     def creatures(self):
         """Iterator over creature-agents."""
         return filter(lambda a: isinstance(a, Creature), self.schedule.agents)
-
+    
     @property
     def candies(self):
         """Iterator over candy-agents."""
         return filter(lambda a: isinstance(a, Candy), self.schedule.agents)
+    
