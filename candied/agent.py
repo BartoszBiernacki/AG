@@ -226,12 +226,13 @@ class Creature(Agent):
             3) eat the candy if it gets close enough
         Steps are repeated over the course of a day.
         """
-        if self.energy > 0 and self.eaten_candies < 2:
+        if self.energy > self.expend_energy(apply=False) and \
+                self.eaten_candies < 2:
             # print(f"Creature {self} has {self.energy} energy.")
             food = self.find_candy()
             # if food:
             #     print(f"Food found at {food.pos} by creature {self}!")
-            self.expend_energy()
+            self.expend_energy(apply=True)
             self.move(food)
             self.eat_candy(food)
 
