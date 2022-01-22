@@ -2,8 +2,8 @@
 
 This module defines the behavior of agents seen in the simulation.
 """
-import math
 import random
+
 import numpy as np
 from mesa import Agent
 
@@ -53,7 +53,7 @@ class Creature(Agent):
         self.moment_of_second_consumption = None
         self.age = 0
         self.made_children = 0
-        
+
         # Optimization purpose
         self.known_energy_costs = False
         self.KE = None
@@ -62,16 +62,12 @@ class Creature(Agent):
         self.dE = None
 
     def find_candy(self):
-        from time import perf_counter_ns
-        start = perf_counter_ns()
         """Locates and returns the nearest candy, `None` if there isn't one."""
         neighbours = self.model.space.get_neighbors(
             pos=self.pos,
             radius=self.view_range,
             include_center=True,
         )
-        end = perf_counter_ns()
-        # print(f"{end - start:}ns")
         candies = [
             neighbour for neighbour in neighbours
             if isinstance(neighbour, Candy) and not neighbour.eaten
@@ -85,9 +81,8 @@ class Creature(Agent):
         return nearest_candy
 
     def expend_energy(self, apply=True):
-        """
-        Return energy needed for small step according to the genes.
-        If apply=True: energy is taken from creature.
+        """Return energy needed for small step according to the genes. If
+        apply=True: energy is taken from creature.
 
         Energy spend is a sum of:
             1) kinetic energy, proportional to speed^2;
@@ -100,10 +95,10 @@ class Creature(Agent):
             self.KE = self.speed**2
             self.VE = 1 / np.tan(self.focus_angle)
             self.FE = 5 * self.view_range
-            
+
             self.dE = self.KE + self.VE + self.FE
             self.known_energy_costs = True
-        
+
         # decrease energy of the creature if apply=True
         if apply:
             self.energy -= self.dE
@@ -127,17 +122,16 @@ class Creature(Agent):
             x = food.pos[0] - self.pos[0]
             y = food.pos[1] - self.pos[1]
             # Make sure the vector's length is exactly r
-            x *= r / math.sqrt(x**2 + y**2)
-            y *= r / math.sqrt(x**2 + y**2)
+            x *= r / np.sqrt(x**2 + y**2)
+            y *= r / np.sqrt(x**2 + y**2)
             # Roatate by a random angle as per focus_angle
             d_theta = random.uniform(-self.focus_angle, self.focus_angle)
-            x = x * math.cos(d_theta) - y * math.sin(d_theta)
-            y = x * math.sin(d_theta) + y * math.cos(d_theta)
-
+            x = x * np.cos(d_theta) - y * np.sin(d_theta)
+            y = x * np.sin(d_theta) + y * np.cos(d_theta)
+            # Move into new position
             new_pos = (self.pos[0] + x, self.pos[1] + y)
-
             # Convert to angle (for the purpouse of `moving_angle`)
-            theta = math.atan(y / x) + d_theta
+            theta = np.arctan(y / x) + d_theta
 
         else:
             theta = self.moving_angle + random.uniform(
@@ -168,7 +162,6 @@ class Creature(Agent):
             distance = self.model.space.get_distance(
                 pos_1=self.pos, pos_2=food.pos)
             if distance < self.speed * 0.5:
-                # print(f"Agent {self} ate candy!")
                 food.eaten = True
                 self.eaten_candies += 1
                 if not self.moment_of_first_consumption:
@@ -237,14 +230,11 @@ class Creature(Agent):
         """
         if self.energy > self.expend_energy(apply=False) and \
                 self.eaten_candies < 2:
-            # print(f"Creature {self} has {self.energy} energy.")
             food = self.find_candy()
-            # if food:
-            #     print(f"Food found at {food.pos} by creature {self}!")
             self.expend_energy(apply=True)
             self.move(food)
             self.eat_candy(food)
-        
+
 
 class Candy(Agent):
     """Candy is an agent that serves only as food for the creatures.
@@ -259,9 +249,8 @@ class Candy(Agent):
         self.pos = pos
         self.eaten = False
 
-        # Data that will be collected at the end of each day for each agent
-        # We care of creature's data, but for compatibility to DataCollector
-        # all agents must have the same fields.
+        # We care about creatures' data, but for compatibility with
+        # DataCollector all agents must have the collected fields
         self.agent_type = 'Candy'
         self.done_steps = None
         self.energy_used_for_movement = None
@@ -289,5 +278,3 @@ class Candy(Agent):
 
     def step(self):
         """No-op, the candy does not act."""
-
-
