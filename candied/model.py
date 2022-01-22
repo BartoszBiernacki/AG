@@ -207,11 +207,13 @@ class Evolution(Model):
             
             if creature.eaten_candies == 0:
                 self.schedule.remove(creature)
+                self.space.remove_agent(creature)
             
             elif creature.eaten_candies == 1:
                 creature.penalty += 0.25
                 if creature.penalty >= 0.999999:
                     self.schedule.remove(creature)
+                    self.space.remove_agent(creature)
             
             else:
                 creature.penalty = 0
@@ -260,9 +262,7 @@ class Evolution(Model):
         of population) than step is an entire day.
         """
         start_time = time.time()
-        
         self.day += 1
-        print(f'Day {self.day}')
         if self.day == 1 or isinstance(self.schedule, StagedActivation):
             # Place new candies
             for _ in range(self.n_candies):
@@ -271,19 +271,23 @@ class Evolution(Model):
                     unique_id=self.next_id(), pos=pos, model=self)
                 self.space.place_agent(agent=new_candy, pos=pos)
                 self.schedule.add(new_candy)
-        
+            
         # Halt if all days passed
         if self.day < self.last_day:
             self.schedule.step()
+            self.datacollector.collect(self)
             if isinstance(self.schedule, StagedActivation):
-                self.datacollector.collect(self)
                 self.evolve()
                 # Remove old candies
                 for candy in self.candies:
                     self.schedule.remove(candy)
+                    self.space.remove_agent(candy)
         else:
             self.running = False
-        print("--- %s seconds ---" % (time.time() - start_time))
+            
+        end_time = time.time()
+        # print(f'Day {self.day}, {count_creatures(model=self)} creatures, '
+        #       f'{end_time - start_time:.3f} seconds')
     
     @property
     def creatures(self):

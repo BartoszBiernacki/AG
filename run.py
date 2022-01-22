@@ -14,9 +14,9 @@ def run_in_background():
     fixed_params = {
         "height": 200,
         "width": 200,
-        "n_creatures": 10,
-        "max_days": 30,
-        "energy": 500,
+        "n_creatures": 40,
+        "max_days": 100,
+        "energy": 1500,
         "mut_rate": 3,
         "speed": 10,
         "view_range": 8,
@@ -27,7 +27,7 @@ def run_in_background():
         "n_candies": [100]
     }
     
-    batch_run = BatchRunnerMP(
+    batch_run = BatchRunner(
         model_cls=Evolution,
         variable_parameters=variable_params,
         fixed_parameters=fixed_params,
@@ -39,19 +39,17 @@ def run_in_background():
     model_data = batch_run.get_collector_model()  # For each model reporters
     agent_data = batch_run.get_collector_agents()  # For each agent reporter
     
-    for key, df in model_data.items():
-        print(key)
-        print(df.to_markdown())
-        df['Speed'].plot()
-        
-        plt.show()
-        # fig, ax = plt.subplots(111)
-        # df.plot[]
-
-    for key, df in agent_data.items():
-        # print(key)
-        df = df.loc[df["Agent type"] == 'Creature']
-        print(df.to_markdown())
+    # for key, df in model_data.items():
+    #     print(key)
+    #     print(df.to_markdown())
+    #     df['Speed'].plot()
+    #
+    #     plt.show()
+    #
+    # for key, df in agent_data.items():
+    #     # print(key)
+    #     df = df.loc[df["Agent type"] == 'Creature']
+    #     print(df.to_markdown())
 
 
 run_in_browser = False

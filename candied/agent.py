@@ -4,7 +4,6 @@ This module defines the behavior of agents seen in the simulation.
 """
 import math
 import random
-
 import numpy as np
 from mesa import Agent
 
@@ -54,14 +53,25 @@ class Creature(Agent):
         self.moment_of_second_consumption = None
         self.age = 0
         self.made_children = 0
+        
+        # Optimization purpose
+        self.known_energy_costs = False
+        self.KE = None
+        self.VE = None
+        self.FE = None
+        self.dE = None
 
     def find_candy(self):
+        from time import perf_counter_ns
+        start = perf_counter_ns()
         """Locates and returns the nearest candy, `None` if there isn't one."""
         neighbours = self.model.space.get_neighbors(
             pos=self.pos,
             radius=self.view_range,
             include_center=True,
         )
+        end = perf_counter_ns()
+        # print(f"{end - start:}ns")
         candies = [
             neighbour for neighbour in neighbours
             if isinstance(neighbour, Candy) and not neighbour.eaten
@@ -86,20 +96,23 @@ class Creature(Agent):
         """
 
         # calculate each energy cost
-        KE = self.speed**2
-        FE = 1 / np.tan(self.focus_angle)
-        VE = 5 * self.view_range
-
-        dE = KE + FE + VE
+        if not self.known_energy_costs:
+            self.KE = self.speed**2
+            self.VE = 1 / np.tan(self.focus_angle)
+            self.FE = 5 * self.view_range
+            
+            self.dE = self.KE + self.VE + self.FE
+            self.known_energy_costs = True
+        
         # decrease energy of the creature if apply=True
         if apply:
-            self.energy -= dE
+            self.energy -= self.dE
 
-            self.energy_used_for_movement += KE
-            self.energy_spent_on_focus_angle += FE
-            self.energy_spent_on_view_range += VE
+            self.energy_used_for_movement += self.KE
+            self.energy_spent_on_focus_angle += self.FE
+            self.energy_spent_on_view_range += self.VE
 
-        return dE
+        return self.dE
 
     def move(self, food):
         """Moves `self.speed` units ahead.
@@ -181,6 +194,12 @@ class Creature(Agent):
         self.moment_of_first_consumption = None
         self.moment_of_second_consumption = None
 
+        self.known_energy_costs = False
+        self.KE = None
+        self.VE = None
+        self.FE = None
+        self.dE = None
+
     def stage_1_compete(self):
         """Single simulation time step. Only run around and eat, do not evolve.
 
@@ -225,7 +244,7 @@ class Creature(Agent):
             self.expend_energy(apply=True)
             self.move(food)
             self.eat_candy(food)
-
+        
 
 class Candy(Agent):
     """Candy is an agent that serves only as food for the creatures.
@@ -270,3 +289,5 @@ class Candy(Agent):
 
     def step(self):
         """No-op, the candy does not act."""
+
+
