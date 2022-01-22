@@ -212,43 +212,43 @@ class Evolution(Model):
                 creature.penalty = 0
                 parents.append(creature)
 
-        random.shuffle(parents)
-
-        # Roulette the parents - we favor the parents with high happiness
-        parents = random.choices(
-            parents,
-            map(lambda p: p.energy_of_happiness, parents),
-            k=len(parents),
-        )
-
-        if len(parents) == 1:
-            # Clone the single parent and mutate the offspring
-            parent = parents[0]
-
-            pos = self.random_pos()
-            offspring = Creature(
-                speed=parent.speed,
-                focus_angle=parent.focus_angle,
-                view_range=parent.view_range,
-                pos=pos,
-                mut_rate=parent.mut_rate,
-                unique_id=self.next_id(),
-                model=self,
+        if len(parents) > 0:
+            random.shuffle(parents)
+            # Roulette the parents - we favor the parents with high happiness
+            parents = random.choices(
+                parents,
+                map(lambda p: p.energy_of_happiness, parents),
+                k=len(parents),
             )
-            offspring.mutate()
-            self.space.place_agent(agent=offspring, pos=pos)
-            self.schedule.add(offspring)
-
-        elif len(parents) > 1:
-            # Iterate over every pair of parents. 2*(len(parents) // 2) to avoid
-            # paring last parent if there is an odd number of them.
-            for i in range(0, 2 * (len(parents) // 2), 2):
-                self.crossover(parents[i], parents[i + 1])
-
-            # If there is an odd number of parents the last one was skipped
-            # so pair him with a random partner.
-            if len(parents) % 2 == 1:
-                self.crossover(parents[-1], random.choice(parents[:-1]))
+    
+            if len(parents) == 1:
+                # Clone the single parent and mutate the offspring
+                parent = parents[0]
+    
+                pos = self.random_pos()
+                offspring = Creature(
+                    speed=parent.speed,
+                    focus_angle=parent.focus_angle,
+                    view_range=parent.view_range,
+                    pos=pos,
+                    mut_rate=parent.mut_rate,
+                    unique_id=self.next_id(),
+                    model=self,
+                )
+                offspring.mutate()
+                self.space.place_agent(agent=offspring, pos=pos)
+                self.schedule.add(offspring)
+    
+            elif len(parents) > 1:
+                # Iterate over every pair of parents. 2*(len(parents) // 2) to avoid
+                # paring last parent if there is an odd number of them.
+                for i in range(0, 2 * (len(parents) // 2), 2):
+                    self.crossover(parents[i], parents[i + 1])
+    
+                # If there is an odd number of parents the last one was skipped
+                # so pair him with a random partner.
+                if len(parents) % 2 == 1:
+                    self.crossover(parents[-1], random.choice(parents[:-1]))
 
     def step(self):
         """Determines what will happened in one full step of simulation.

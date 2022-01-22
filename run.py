@@ -93,7 +93,7 @@ if __name__ == '__main__':
         "n_candies": [50, 60, 100],
         "n_creatures": [40, 50, 80],
     }
-    multithreading = False
+    multithreading = True
 
     print_model_data = False
     print_model_avg_data = True
