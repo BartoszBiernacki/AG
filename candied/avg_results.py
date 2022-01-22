@@ -55,6 +55,7 @@ def group_tuples_by_start(list_of_tuples, start_length):
 
 def avg_model_results(model_collector_result,
                       variable_params,
+                      ignore_dead_populations=True,
                       ):
     """
     Returns dict in which:
@@ -77,8 +78,14 @@ def avg_model_results(model_collector_result,
         lis = []
         # items are full tuples, e.g. item=(5, 2, 2, ..., 0)
         for item in tuples_grouped[key]:
-            # list of results dataframes matching key_tuple=(5, 2, 2)
-            lis.append(model_collector_result[item])
+            if ignore_dead_populations:
+                if np.array(model_collector_result[item]['Creatures'])[-1] > 0:
+                    # list of results dataframes matching key_tuple=(5, 2, 2)
+                    lis.append(model_collector_result[item])
+            else:
+                # list of results dataframes matching key_tuple=(5, 2, 2)
+                lis.append(model_collector_result[item])
+                
         array_with_all_iterations_results_for_specific_parameters =\
             np.array(lis)
         

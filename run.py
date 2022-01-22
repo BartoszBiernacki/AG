@@ -15,6 +15,7 @@ def run_in_background(fixed_parameters: dict,
                       variable_parameters: dict,
                       iterations=3,
                       multithreading=True,
+                      ignore_dead_populations=True,
                       print_model_data=False,
                       print_model_avg_data=False,
                       print_agent_data=False,
@@ -42,7 +43,9 @@ def run_in_background(fixed_parameters: dict,
     agent_data = batch_run.get_collector_agents()  # For each agent reporter
 
     avg_model_data = avg_model_results(model_collector_result=model_data,
-                                       variable_params=variable_parameters)
+                                       variable_params=variable_parameters,
+                                       ignore_dead_populations=
+                                       ignore_dead_populations)
     
     save_avg_results(avg_results=avg_model_data,
                      fixed_params=fixed_parameters,
@@ -82,7 +85,7 @@ if __name__ == '__main__':
     fixed_params = {
         "height": 200,
         "width": 200,
-        "max_days": 300,
+        "max_days": 80,
         "energy": 1500,
         "mut_rate": 3,
         "speed": 10,
@@ -90,11 +93,13 @@ if __name__ == '__main__':
         "max_steps_per_day": 100
     }
     variable_params = {
-        "n_candies": [80],
+        "n_candies": [70],
         "n_creatures": [50],
     }
     iterations = 12
     multithreading = True
+    
+    ignore_dead_populations = True
 
     print_model_data = False
     print_model_avg_data = True
@@ -112,6 +117,7 @@ if __name__ == '__main__':
                 variable_parameters=variable_params,
                 iterations=iterations,
                 multithreading=multithreading,
+                ignore_dead_populations=ignore_dead_populations,
                 print_model_data=print_model_data,
                 print_model_avg_data=print_model_avg_data,
                 print_agent_data=print_agent_data,
