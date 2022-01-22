@@ -203,7 +203,7 @@ class Creature(Agent):
         Do repetition in StagedActivation with shuffle=True, to obtain
         simultaneous move of all creatures. If repetition would be done here
         by: for _ in range(100): self.step
-        than in particular day agents would be moving in order of call, which
+        then in particular day agents would be moving in order of call, which
         would be unfair.
         """
         self.step()

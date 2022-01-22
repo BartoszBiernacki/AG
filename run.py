@@ -90,9 +90,10 @@ if __name__ == '__main__':
         "max_steps_per_day": 100
     }
     variable_params = {
-        "n_candies": [50, 60, 100],
-        "n_creatures": [40, 50, 80],
+        "n_candies": [80],
+        "n_creatures": [50],
     }
+    iterations = 12
     multithreading = True
 
     print_model_data = False
@@ -109,7 +110,7 @@ if __name__ == '__main__':
             run_in_background(
                 fixed_parameters=fixed_params,
                 variable_parameters=variable_params,
-                iterations=5,
+                iterations=iterations,
                 multithreading=multithreading,
                 print_model_data=print_model_data,
                 print_model_avg_data=print_model_avg_data,

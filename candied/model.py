@@ -139,7 +139,7 @@ class Evolution(Model):
             })
 
     def random_pos(self):
-        """Returns a tuple of ranodmized `(x,y)` coordinates."""
+        """Returns a tuple of randomized `(x,y)` coordinates."""
         return (
             random.uniform(0, self.width),
             random.uniform(0, self.height),
