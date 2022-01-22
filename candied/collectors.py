@@ -42,6 +42,21 @@ def avg_mut_rate(model):
         return sum(map(lambda a: a.mut_rate, creatures), ) / len(creatures)
     else:
         return 0
+    
+    
+def energy_on_movement(model):
+    """Returns total energy spent for movement by population."""
+    return sum(map(lambda a: a.energy_used_for_movement, model.creatures))
+
+
+def energy_on_view_range(model):
+    """Returns total energy spent for view range by population."""
+    return sum(map(lambda a: a.energy_spent_on_view_range, model.creatures))
+
+
+def energy_on_focus_angle(model):
+    """Returns total energy spent for focus angle by population."""
+    return sum(map(lambda a: a.energy_spent_on_focus_angle, model.creatures))
 
 
 def count_zero_eaters(model):

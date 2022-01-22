@@ -93,12 +93,15 @@ class Creature(Agent):
         # calculate each energy cost
         if not self.known_energy_costs:
             self.KE = self.speed**2
-            self.VE = 1 / np.tan(self.focus_angle)
+            self.VE = 1 / np.tan(self.focus_angle/2)
             self.FE = 5 * self.view_range
 
             self.dE = self.KE + self.VE + self.FE
             self.known_energy_costs = True
-
+        
+        # if self.VE < 0:
+        #     print(f"KE={self.KE:.2f}, VE={self.VE:.2f}, FE={self.FE:.2f} "
+        #           f"focus_angle={self.focus_angle:.2f}")
         # decrease energy of the creature if apply=True
         if apply:
             self.energy -= self.dE

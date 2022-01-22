@@ -82,7 +82,7 @@ if __name__ == '__main__':
     fixed_params = {
         "height": 200,
         "width": 200,
-        "max_days": 100,
+        "max_days": 300,
         "energy": 1500,
         "mut_rate": 3,
         "speed": 10,
