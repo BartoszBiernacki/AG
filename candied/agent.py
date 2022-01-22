@@ -99,9 +99,6 @@ class Creature(Agent):
             self.dE = self.KE + self.VE + self.FE
             self.known_energy_costs = True
         
-        # if self.VE < 0:
-        #     print(f"KE={self.KE:.2f}, VE={self.VE:.2f}, FE={self.FE:.2f} "
-        #           f"focus_angle={self.focus_angle:.2f}")
         # decrease energy of the creature if apply=True
         if apply:
             self.energy -= self.dE
@@ -153,6 +150,10 @@ class Creature(Agent):
     def mutate(self):
         """Change the genes according to `self.mut_rate`."""
         self.focus_angle += self.mut_rate * random.gauss(0, 1)
+        if self.focus_angle < 0:
+            self.focus_angle = 1e-6
+        elif self.focus_angle > np.pi:
+            self.focus_angle = np.pi
         self.view_range += self.mut_rate * random.gauss(0, 1)
         self.speed += self.mut_rate * random.gauss(0, 1)
 
