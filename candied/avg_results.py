@@ -163,4 +163,83 @@ def save_avg_results(avg_results,
         df.to_csv(path_or_buf=save_dir + fname + '.csv', index=False)
         file_id += 1
 
+
+def save_agent_results(agent_data: dict,
+                       save_dir: str,
+                       fixed_params: dict,
+                       variable_params: dict,
+                       base_params=None):
+    
+    if base_params:
+        dir_name = ''
+        for param, val in {**fixed_params, **variable_params}.items():
+            if param in base_params:
+                try:
+                    dir_name += param.capitalize() + '=' + str(
+                        round(val, 3)) + '___'
+                except TypeError:
+                    tuple_val = tuple([round(x, 3) for x in val])
+                    dir_name += param.capitalize() + '=' + str(
+                        tuple_val) + '___'
+
+        dir_name = dir_name[: -3]
+        save_dir += dir_name + '/'
+        save_dir += 'raw data/'
+
+    Path(save_dir).mkdir(parents=True, exist_ok=True)
+
+    try:
+        file_id = len([path for path in Path("./" + save_dir).iterdir() if
+                       path.is_file()])
+    except FileNotFoundError:
+        file_id = 0
+        
+    # Saving dataframes
+    for tuple_key, df in agent_data.items():
+        df = df.loc[df['Agent type'] == 'Creature']
+        fname = f'Id={str(file_id).zfill(4)}'
+        for param, val in zip(variable_params, tuple_key):
+            try:
+                fname += '___' + param.capitalize() + '=' + str(round(val, 3))
+            except TypeError:
+                tuple_val = tuple([round(x, 3) for x in val])
+                fname += '___' + param.capitalize() + '=' + str(tuple_val)
+
+        df.to_csv(path_or_buf=save_dir + fname + '.csv', index=True)
+        file_id += 1
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
