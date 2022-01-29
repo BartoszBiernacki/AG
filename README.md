@@ -15,7 +15,7 @@ Agenci poruszają się po planszy zgodnie ze swoim **genotypem**. Jeśli w ich z
 cukierek, wówczas wykonują krok w losowym kierunku ze stożka (-π/2, +π/2). Jeśli widzą pożywienie stożek ten zawęża się do
 (-θ, +θ), gdzie θ jest kątem skupienia agenta.
 
-![Illustration of how the focus angle works](focus.png)
+<img src="focus.png" align="center" border="0" alt="Illustration of how the focus angle works" width="300" />
 
 Mamy nadzieję znaleźć zestaw genów, który zminimalizuje zużytą w ciągu dnia energię.
 
